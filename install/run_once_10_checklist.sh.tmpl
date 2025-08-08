@@ -1,0 +1,105 @@
+#!/bin/bash
+set -e
+
+echo "===== 🚀 Iniciando checklist do ambiente chezmoi ====="
+
+# 1. Shell e prompt
+echo "[1/9] Testando shell e prompt..."
+if [[ "$SHELL" == *"zsh" ]]; then
+  echo "✅ Shell padrão é Zsh"
+else
+  echo "❌ Shell padrão não é Zsh"
+fi
+
+if command -v starship &>/dev/null; then
+  echo "✅ Starship instalado: $(starship --version)"
+else
+  echo "❌ Starship não encontrado"
+fi
+
+# 2. Plugins Zsh
+echo "[2/9] Testando plugins Zsh..."
+if [[ -n "$(typeset -f _fzf_tab_completion 2>/dev/null)" ]]; then
+  echo "✅ fzf-tab carregado"
+else
+  echo "⚠️ fzf-tab não detectado"
+fi
+
+if [[ -n "$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE" ]]; then
+  echo "✅ zsh-autosuggestions carregado"
+else
+  echo "⚠️ zsh-autosuggestions não detectado"
+fi
+
+if command -v zoxide &>/dev/null; then
+  echo "✅ zoxide instalado"
+else
+  echo "❌ zoxide não encontrado"
+fi
+
+# 3. asdf e linguagens
+echo "[3/9] Testando asdf..."
+if command -v asdf &>/dev/null; then
+  echo "✅ asdf instalado: $(asdf --version)"
+  for lang in nodejs python golang; do
+    if asdf list "$lang" &>/dev/null; then
+      echo "✅ $lang configurado no asdf"
+    else
+      echo "❌ $lang não encontrado no asdf"
+    fi
+  done
+else
+  echo "❌ asdf não encontrado"
+fi
+
+# 4. CLIs cloud
+echo "[4/9] Testando CLIs cloud..."
+for cli in aws gh gcloud; do
+  if command -v $cli &>/dev/null; then
+    echo "✅ $cli instalado: $($cli --version | head -n1)"
+  else
+    echo "❌ $cli não encontrado"
+  fi
+done
+
+# 5. Multiplexadores
+echo "[5/9] Testando multiplexadores..."
+for mux in tmux zellij; do
+  if command -v $mux &>/dev/null; then
+    echo "✅ $mux instalado: $($mux -V 2>/dev/null || $mux --version)"
+  else
+    echo "❌ $mux não encontrado"
+  fi
+done
+
+# 6. Neovim
+echo "[6/9] Testando Neovim..."
+if command -v nvim &>/dev/null; then
+  echo "✅ Neovim instalado: $(nvim --version | head -n1)"
+  if [[ -d "$HOME/.local/share/nvim/lazy/LazyVim" ]]; then
+    echo "✅ LazyVim detectado"
+  else
+    echo "⚠️ LazyVim não detectado"
+  fi
+else
+  echo "❌ Neovim não encontrado"
+fi
+
+# 7. Utilitários comuns
+echo "[7/9] Testando utilitários comuns..."
+COMMON_TOOLS=(bat ripgrep fzf curlie lazygit lazydocker navi yazi fd eza hurl)
+for tool in "${COMMON_TOOLS[@]}"; do
+  if command -v $tool &>/dev/null; then
+    echo "✅ $tool instalado"
+  else
+    echo "❌ $tool não encontrado"
+  fi
+done
+
+# 8. Validar PATH
+echo "[8/9] Validando PATH..."
+echo "$PATH" | tr ':' '\n'
+
+# 9. Finalização
+echo "[9/9] Checklist concluído!"
+echo "===== ✅ Fim ====="

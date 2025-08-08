@@ -1,0 +1,32 @@
+#!/bin/bash
+set -e
+
+echo "[+] Instalando Oh My Zsh e plugins..."
+
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  export RUNZSH=no
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+fi
+
+if command -v zsh &>/dev/null; then
+  echo "[+] Definindo zsh como shell padrão..."
+  chsh -s "$(which zsh)"
+
+  if [[ "$SHELL" != *"zsh" ]]; then
+    echo "[+] Iniciando nova sessão zsh..."
+    exec zsh
+  fi
+fi
+
+ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+mkdir -p "$ZSH_CUSTOM/plugins"
+
+echo "[+] Instalando plugins extras do Oh My Zsh..."
+git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use "$ZSH_CUSTOM/plugins/you-should-use"
+git clone --depth=1 https://github.com/TamCore/zsh-interactive-cd "$ZSH_CUSTOM/plugins/zsh-interactive-cd"
+git clone --depth=1 https://github.com/psprint/zsh-navigation-tools "$ZSH_CUSTOM/plugins/zsh-navigation-tools"
+git clone --depth=1 https://github.com/djui/alias-finder "$ZSH_CUSTOM/plugins/alias-finder"
+
+echo "[✔] Zsh configurado com sucesso."

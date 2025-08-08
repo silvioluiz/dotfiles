@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+echo "[+] Instalando Google Cloud CLI..."
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  brew install --cask google-cloud-sdk
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  echo "[+] Baixando Google Cloud SDK (silencioso)..."
+  curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-450.0.1-linux-arm.tar.gz
+  tar -xf google-cloud-cli-*.tar.gz
+
+  echo "[+] Instalando Google Cloud SDK..."
+  ./google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false --command-completion false
+fi

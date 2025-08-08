@@ -1,0 +1,51 @@
+# Oh My Zsh setup
+export ZSH="$HOME/.oh-my-zsh"
+
+DISABLE_UPDATE_PROMPT=true
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' frequency 13
+
+plugins=(
+  git
+  docker-compose
+  fzf
+  asdf
+  aws
+  gh
+  gcloud
+  alias-finder
+  you-should-use
+  zsh-syntax-highlighting
+  zsh-interactive-cd
+  zsh-navigation-tools
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# fzf init (no Linux, ou se não inicializado por brew)
+if [[ "$OSTYPE" != "darwin"* ]] && [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+fi
+
+# zoxide init
+eval "$(zoxide init zsh)"
+
+# starship prompt
+eval "$(starship init zsh)"
+
+# Carregar fzf-tab manualmente (após compinit, antes de zsh-autosuggestions)
+if [ -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab" ]; then
+  source "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab/fzf-tab.plugin.zsh"
+fi
+
+# Agora carregar zsh-autosuggestions
+if [ -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+  source "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+
+# asdf (necessário se instalado via git clone)
+if [ -f "$HOME/.asdf/asdf.sh" ]; then
+  . "$HOME/.asdf/asdf.sh"
+  . "$HOME/.asdf/completions/asdf.bash"
+fi
