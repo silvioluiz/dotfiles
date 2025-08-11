@@ -92,7 +92,7 @@ done
 command -v nvim >/dev/null && echo '✅ Neovim: ' \$(nvim --version | head -n1) || echo '❌ Neovim não encontrado'
 
 # 7. Utilitários comuns
-for tool in bat btop curlie dust eza fd fzf htop hurl k9s lazygit lazydocker navi nu rg shellcheck starship yazi zoxide; do
+for tool in atuin bat btop curlie dust eza fd fzf htop hurl k9s lazygit lazydocker navi nu rg shellcheck starship yazi zoxide; do
   command -v \$tool >/dev/null && echo \"✅ \$tool\" || echo \"❌ \$tool não encontrado\"
 done
 
