@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+echo "[+] Instalando mise..."
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS: via Homebrew (assumido já instalado)
+  if ! command -v mise >/dev/null 2>&1; then
+    brew install mise
+  fi
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  # Linux (ex.: Ubuntu 24.04): installer oficial
+  if ! command -v mise >/dev/null 2>&1; then
+    curl -fsSL https://mise.run | sh
+    # mise instala em ~/.local/bin por padrão;
+    # garante que esteja acessível nesta sessão
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+fi
+
+echo "[+] Configurando runtimes globais..."
+mise install --yes
+
+echo "[✔] mise pronto (Node LTS, Python latest, Go latest), além de utilitários diversos."

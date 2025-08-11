@@ -19,7 +19,7 @@ for arg in "$@"; do
 done
 
 echo "🚀 Criando VM Multipass: $VM_NAME ($UBUNTU_VERSION)..."
-multipass launch "$UBUNTU_VERSION" --name "$VM_NAME" --disk 20G --memory 4G
+multipass launch "$UBUNTU_VERSION" --name "$VM_NAME" --disk 20G --memory 3G
 
 echo "⏳ Aguardando VM iniciar..."
 sleep 5
@@ -46,14 +46,32 @@ command -v starship >/dev/null && echo '✅ Starship: ' \$(starship --version) |
 [[ -n \"\$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE\" ]] && echo '✅ zsh-autosuggestions' || echo '⚠️ zsh-autosuggestions não detectado'
 command -v zoxide >/dev/null && echo '✅ zoxide' || echo '❌ zoxide não encontrado'
 
-# 3. asdf
-if command -v asdf >/dev/null; then
-  echo '✅ asdf: ' \$(asdf --version)
-  for lang in nodejs python golang; do
-    asdf list \$lang >/dev/null && echo \"✅ \$lang no asdf\" || echo \"❌ \$lang não encontrado\"
+# 3. mise
+if command -v mise >/dev/null 2>&1; then
+  echo "✅ mise: $(mise --version | head -n1)"
+
+  for tool in node python go; do
+    # há algo instalado/configurado para esse tool?
+    if out="$(mise ls "$tool" 2>/dev/null)" && [[ -n "$out" ]]; then
+      # tenta mostrar a versão do binário ativo no PATH
+      case "$tool" in
+        node)   bin=node ;;
+        python) bin=python3 ;;  # costuma ser python3
+        go)     bin=go ;;
+      esac
+
+      if command -v "$bin" >/dev/null 2>&1; then
+        ver="$("$bin" --version 2>/dev/null | head -n1)"
+        echo "✅ $tool no mise — ${ver:-instalado}"
+      else
+        echo "⚠️  $tool listado no mise, mas binário não está no PATH (ative o shell e rode 'mise install')."
+      fi
+    else
+      echo "❌ $tool não encontrado no mise"
+    fi
   done
 else
-  echo '❌ asdf não encontrado'
+  echo "❌ mise não encontrado"
 fi
 
 # 4. CLIs cloud
@@ -70,7 +88,7 @@ done
 command -v nvim >/dev/null && echo '✅ Neovim: ' \$(nvim --version | head -n1) || echo '❌ Neovim não encontrado'
 
 # 7. Utilitários comuns
-for tool in bat ripgrep fzf curlie lazygit lazydocker navi yazi fd eza hurl; do
+for tool in bat btop curlie dust eza fd fzf htop hurl k9s lazygit lazydocker navi nu rg shellcheck starship yazi zoxide; do
   command -v \$tool >/dev/null && echo \"✅ \$tool\" || echo \"❌ \$tool não encontrado\"
 done
 

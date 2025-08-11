@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "[+] Instalando Starship..."
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  brew install starship
-else
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-fi
+echo "[+] Configurando Starship..."
 
 mkdir -p ~/.config
 starship preset catppuccin-powerline -o ~/.config/starship.toml

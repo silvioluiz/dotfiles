@@ -1,0 +1,51 @@
+# mise.toml — base global
+
+usage = "latest"
+
+[tools]
+# Linguagens / runtimes
+node = "lts"
+python = "latest"
+go = "latest"
+java = "openjdk-21"
+
+# Ecossistema py/node
+"github:astral-sh/uv" = "latest"      # uv (rápido p/ Python)
+pnpm = "latest"
+yarn = "latest"
+bun = "latest"
+
+
+# Cloud / IaC
+kubectl = "latest"
+helm = "latest"
+kustomize = "latest"
+terraform = "1.9"
+awscli = "2"
+gh = "latest"
+gcloud = "latest"
+
+# Terminal / produtividade (via releases do GitHub p/ máxima cobertura)
+"github:atuinsh/atuin" = "latest"
+"github:sharkdp/bat"                = "latest"  # bat
+"github:aristocratos/btop"          = "latest"  # btop
+"github:rs/curlie"                  = "latest"  # curlie
+"github:bootandy/dust"              = "latest"  # dust
+"github:eza-community/eza" = { version = "latest", os = ["linux"] } #eza
+"github:sharkdp/fd"                 = "latest"  # fd
+"github:junegunn/fzf"               = "latest"  # fzf
+"github:htop-dev/htop"              = "latest"  # htop
+"github:Orange-OpenSource/hurl"     = "latest"  # hurl
+"github:derailed/k9s"               = "latest"  # k9s
+"github:jesseduffield/lazydocker"   = "latest"  # lazydocker
+"github:jesseduffield/lazygit"      = "latest"  # lazygit
+"github:denisidoro/navi"            = "latest"  # navi
+"github:nushell/nushell"            = "latest"  # nushell
+"github:BurntSushi/ripgrep"         = "latest"  # ripgrep
+"github:koalaman/shellcheck"        = "latest"  # shellcheck
+"github:starship/starship"          = "latest"  # starship
+"github:sxyazi/yazi"                = "latest"  # yazi
+"github:ajeetdsouza/zoxide"         = "latest"  # zoxide
+
+[env]
+PIP_DISABLE_PIP_VERSION_CHECK = "1"

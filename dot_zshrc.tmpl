@@ -5,11 +5,19 @@ DISABLE_UPDATE_PROMPT=true
 zstyle ':omz:update' mode auto
 zstyle ':omz:update' frequency 13
 
+
+# --- mise (version manager) ---
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+elif [[ -x "$HOME/.local/bin/mise" ]]; then
+  eval "$("$HOME/.local/bin/mise" activate zsh)"
+fi
+
+
 plugins=(
   git
   docker-compose
   fzf
-  asdf
   aws
   gh
   gcloud
@@ -18,6 +26,7 @@ plugins=(
   zsh-syntax-highlighting
   zsh-interactive-cd
   zsh-navigation-tools
+  zsh-mise
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -41,11 +50,4 @@ fi
 # Agora carregar zsh-autosuggestions
 if [ -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
   source "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
-fi
-
-
-# asdf (necessário se instalado via git clone)
-if [ -f "$HOME/.asdf/asdf.sh" ]; then
-  . "$HOME/.asdf/asdf.sh"
-  . "$HOME/.asdf/completions/asdf.bash"
 fi

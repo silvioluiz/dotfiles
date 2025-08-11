@@ -38,19 +38,35 @@ else
 fi
 
 # 3. asdf e linguagens
-echo "[3/9] Testando asdf..."
-if command -v asdf &>/dev/null; then
-  echo "✅ asdf instalado: $(asdf --version)"
-  for lang in nodejs python golang; do
-    if asdf list "$lang" &>/dev/null; then
-      echo "✅ $lang configurado no asdf"
+echo "[3/9] Testando mise..."
+if command -v mise &>/dev/null; then
+  echo "✅ mise instalado: $(mise --version | head -n1)"
+
+  TOOLS=(node python go java)
+
+  for t in "${TOOLS[@]}"; do
+    installed_out="$(mise ls --installed "$t" 2>/dev/null | sed -n '1p')"
+    current_out="$(mise ls --current "$t" 2>/dev/null | sed -n '1p')"
+
+    if [[ -n "$installed_out" ]]; then
+      # mostra a versão real executando via mise (independe do PATH/activate)
+      case "$t" in
+        node)   ver="$(mise exec node  -- node -v 2>/dev/null | head -n1)" ;;
+        python) ver="$(mise exec python -- python --version 2>/dev/null | head -n1)" ;;
+        go)     ver="$(mise exec go     -- go version 2>/dev/null | head -n1)" ;;
+        java)   ver="$(mise exec java   -- java -version 2>&1       | head -n1)" ;;
+      esac
+      echo "✅ $t instalado no mise — ${ver:-ok}"
+    elif [[ -n "$current_out" ]]; then
+      echo "⚠️  $t configurado no mise, mas não instalado (rode: mise install $t)"
     else
-      echo "❌ $lang não encontrado no asdf"
+      echo "❌ $t não encontrado no mise"
     fi
   done
 else
-  echo "❌ asdf não encontrado"
+  echo "❌ mise não encontrado"
 fi
+
 
 # 4. CLIs cloud
 echo "[4/9] Testando CLIs cloud..."
@@ -87,12 +103,60 @@ fi
 
 # 7. Utilitários comuns
 echo "[7/9] Testando utilitários comuns..."
-COMMON_TOOLS=(bat ripgrep fzf curlie lazygit lazydocker navi yazi fd eza hurl)
+COMMON_TOOLS=(bat btop curlie dust eza fd fzf ghostty htop hurl k9s lazydocker lazygit navi nu rg shellcheck starship yazi zoxide  )
+# Nome “amigável” para exibir
+declare -A FRIENDLY=(
+  [nu]="nushell"
+  [rg]="ripgrep"
+)
+
+# Flags padrão (na ordem)
+DEFAULT_CANDIDATES=(
+  "--version"
+  "-V"
+  "version"
+  "version --short"
+)
+
+# Exceções por ferramenta
+declare -A CUSTOM
+CUSTOM[fzf]="-v"                 # fzf usa -v
+CUSTOM[k9s]="version --short"    # k9s tem subcomando version
+
+try_version() {
+  local tool="$1"
+  local out=""
+  local -a candidates=()
+
+  if [[ -n "${CUSTOM[$tool]:-}" ]]; then
+    # se houver exceção, testa ela primeiro
+    candidates+=("${CUSTOM[$tool]}")
+  fi
+  candidates+=("${DEFAULT_CANDIDATES[@]}")
+
+  for cand in "${candidates[@]}"; do
+    # divide cand em palavras (ex.: "version --short")
+    # shellcheck disable=SC2206
+    local args=( $cand )
+    if out="$("$tool" "${args[@]}" 2>&1)"; then
+      # pegamos só a 1a linha para não poluir
+      echo "$out" | head -n1
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 for tool in "${COMMON_TOOLS[@]}"; do
-  if command -v $tool &>/dev/null; then
-    echo "✅ $tool instalado"
+  if command -v "$tool" >/dev/null 2>&1; then
+    if ver="$(try_version "$tool")"; then
+      printf "✅ %s instalado — %s\n" "${FRIENDLY[$tool]:-$tool}" "$ver"
+    else
+      printf "✅ %s instalado\n" "${FRIENDLY[$tool]:-$tool}"
+    fi
   else
-    echo "❌ $tool não encontrado"
+    printf "❌ %s não encontrado\n" "${FRIENDLY[$tool]:-$tool}"
   fi
 done
 

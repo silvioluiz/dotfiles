@@ -3,43 +3,27 @@ set -e
 
 echo "[+] Instalando pacotes CLI básicos..."
 
-COMMON_PACKAGES=(
-  
-   # CLI essenciais para terminal e desenvolvimento
-  bat fd-find ripgrep fzf git curl unzip gnupg tree shellcheck zoxide
-
-  # Produtividade, visualização e diagnóstico
-  btop htop dust lazygit navi yazi curlie
-
-  # Cloud-native e devops
-  lazydocker k9s
-
-)
-
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  COMMON_PACKAGES+=(fd eza hurl)
+  
+  echo "[+] Instalando dependencias via xcode..."
+  xcode-select --install
+  
+  echo "[+] Instalando Homebrew via curl..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  
   echo "[+] Instalando via Homebrew..."
-  brew install "${COMMON_PACKAGES[@]}"
+  brew install autoconf automake gcc git gnupg ncurses tree unzip
+  brew install eza
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   echo "[+] Instalando via APT..."
-  sudo apt update
-  sudo apt install -y "${COMMON_PACKAGES[@]}"
-
-  echo "[+] Adicionando repositório eza-community/eza..."
-  sudo mkdir -p /etc/apt/keyrings
-  wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
-    sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-  echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
-    sudo tee /etc/apt/sources.list.d/eza.list > /dev/null
-  sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/eza.list
-  sudo apt update
-  sudo apt install -y eza
-
-  echo "[+] Instalando Hurl (.deb oficial)..."
-  curl -LO https://github.com/Orange-OpenSource/hurl/releases/latest/download/hurl_amd64.deb
-  sudo dpkg -i hurl_amd64.deb
-  rm hurl_amd64.deb
+  sudo apt update -y
+  sudo apt-get install -y \
+    apt-transport-https autotools-dev autoconf automake \ 
+    build-essential curl git gnupg ca-certificates \
+    libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
+    libffi-dev libncurses5-dev libncursesw5-dev xz-utils tk-dev uuid-dev tree
+  
 fi
 
 echo "[✔] Pacotes CLI básicos instalados com sucesso!"
