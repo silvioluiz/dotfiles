@@ -25,16 +25,20 @@ echo "⏳ Aguardando VM iniciar..."
 sleep 5
 
 echo "📦 Instalando chezmoi na VM..."
+multipass exec "$VM_NAME" -- sudo cloud-init status --wait
 multipass exec "$VM_NAME" -- sudo apt update
-multipass exec "$VM_NAME" -- sudo apt install -y chezmoi curl
+multipass exec "$VM_NAME" -- sudo apt install -y curl git zsh ca-certificates
+multipass exec "$VM_NAME" -- bash -lc 'curl -fsLS get.chezmoi.io | sh -s -- -b "$HOME/.local/bin"'
 
 echo "📥 Clonando e aplicando repositório chezmoi de $GITHUB_USER..."
-multipass exec "$VM_NAME" -- chezmoi init --apply "$GITHUB_USER"
+multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi --version"
+multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi init --apply \"$GITHUB_USER\""
 
 echo "🧪 Criando script de checklist na VM..."
 multipass exec "$VM_NAME" -- bash -c "cat <<'EOF' > /tmp/chezmoi_test_checklist.sh
 #!/bin/bash
 set -e
+export PATH="$HOME/.local/bin:$PATH"
 echo '===== 🚀 Iniciando checklist do ambiente chezmoi ====='
 
 # 1. Shell
