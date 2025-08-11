@@ -23,6 +23,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 
   echo "[+] Instalando via Homebrew..."
   brew install autoconf automake git gnupg ncurses pkg-config tree unzip
+
+  echo "[+] Instalando opcionais pro Yazi..."
+  brew install ffmpeg sevenzip jq poppler resvg imagemagick font-symbols-only-nerd-font
   
 elif [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "linux"* ]]; then
   echo "[+] Instalando via APT..."
@@ -33,6 +36,8 @@ elif [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "linux"* ]]; then
     libffi-dev libncurses-dev xz-utils tk-dev uuid-dev tree \
     pkg-config libgdbm-dev liblzma-dev libnss3-dev
   sudo apt-get install -y snapd
+
+  
 
 fi
 

@@ -6,7 +6,9 @@ echo "[+] Instalando Starship..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
   brew install starship
 elif [[ "$OSTYPE" == "linux"* ]]; then
-  curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin"
+  #curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin"
+  curl -sS https://starship.rs/install.sh | sh
+
 fi
 
 # garante que o bin local está acessível nesta sessão (Linux)

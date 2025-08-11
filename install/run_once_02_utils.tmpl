@@ -3,7 +3,7 @@ set -e
 
 echo "[+] Instalando pacotes CLI utilitários..."
 
-COMMON_PACKAGES=(
+MACOS_COMMON_PACKAGES=(
   
   bat btop curlie dust fd-find fzf
 
@@ -12,22 +12,34 @@ COMMON_PACKAGES=(
   shellcheck starship yazi zoxide
 )
 
+UNIX_COMMON_PACKAGES=(
+  
+    bat btop fd-find fzf htop lazygit ripgrep shellcheck zoxide
+
+)
+
 echo "[+] Instalando Atuin..."
 curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 
 
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  COMMON_PACKAGES+=(fd eza hurl)
+  MACOS_COMMON_PACKAGES+=(fd eza hurl)
   echo "[+] Instalando via Homebrew..."
-  brew install "${COMMON_PACKAGES[@]}"
+  brew install "${MACOS_COMMON_PACKAGES[@]}"
   echo "[+] Instalando k9s..."
   brew install derailed/k9s/k9s
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   echo "[+] Instalando via APT..."
   sudo apt update
-  sudo apt install -y "${COMMON_PACKAGES[@]}"
+  sudo apt install -y "${UNIX_COMMON_PACKAGES[@]}"
+
+  echo "[+] Instalando curlie..."
+  curl -sS https://webinstall.dev/curlie | bash
+
+  echo "[+] Instalando dust..."
+  sudo snap install dust
 
   echo "[+] Adicionando repositório eza-community/eza..."
   sudo mkdir -p /etc/apt/keyrings
@@ -38,14 +50,33 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/eza.list
   sudo apt install -y eza
 
-  echo "[+] Instalando Hurl (.deb oficial)..."
-  VERSION=7.0.0
-  sudo apt-add-repository -y ppa:lepapareil/hurl
-  sudo apt install -y hurl="${VERSION}"*
-
   echo "[+] Instalando k9s..."
   # tenta 'classic' primeiro; se não rolar, cai para 'devmode'
   sudo snap install k9s --classic || sudo snap install k9s --devmode
+
+  echo "[+] Instalando lazydocker..."
+  curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+  
+
+  echo "[+] Instalando Hurl (.deb oficial)..."
+  HURL_VERSION=7.0.0
+  sudo apt-add-repository -y ppa:lepapareil/hurl
+  sudo apt install -y hurl="${HURL_VERSION}"*
+
+  echo "[+] Instalando Navi..."
+  mkdir -p "$HOME/.local/bin"
+  BIN_DIR="$HOME/.local/bin" \
+  curl -fsSL https://raw.githubusercontent.com/denisidoro/navi/master/scripts/install \
+  | bash
+
+  echo "[+] Instalando nushell..."
+  curl -fsSL https://apt.fury.io/nushell/gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/fury-nushell.gpg
+  echo "deb https://apt.fury.io/nushell/ /" | sudo tee /etc/apt/sources.list.d/fury.list
+  sudo apt install -y nushell
+
+  echo "[+] Instalando Yazi..."
+  cargo install --locked yazi-fm yazi-cli
+  
 fi
 
 echo "[✔] Pacotes CLI básicos instalados com sucesso!"
