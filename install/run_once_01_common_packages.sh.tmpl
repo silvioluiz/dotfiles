@@ -1,29 +1,38 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "[+] Instalando pacotes CLI básicos..."
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  
-  echo "[+] Instalando dependencias via xcode..."
-  xcode-select --install
-  
-  echo "[+] Instalando Homebrew via curl..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  
+  # 1) Xcode CLT (interativo). Só chama se não estiver instalado.
+  if ! xcode-select -p >/dev/null 2>&1; then
+    echo "[+] Instalando dependências via Xcode CLT (interativo)..."
+    xcode-select --install || true
+  fi
+
+  # 2) Homebrew (não reinstala; usa modo não-interativo)
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "[+] Instalando Homebrew..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+
+  # 3) Garante brew no PATH (Apple Silicon)
+  if [[ -d /opt/homebrew/bin ]] && ! command -v brew >/dev/null 2>&1; then
+    export PATH="/opt/homebrew/bin:$PATH"
+  fi
+
   echo "[+] Instalando via Homebrew..."
   brew install autoconf automake gcc git gnupg ncurses tree unzip
   brew install eza
 
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+elif [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "linux"* ]]; then
   echo "[+] Instalando via APT..."
-  sudo apt update -y
+  sudo apt-get update -y
   sudo apt-get install -y \
-    apt-transport-https autotools-dev autoconf automake \ 
-    build-essential curl git gnupg ca-certificates \
+    autoconf automake build-essential curl git gnupg ca-certificates \
     libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
-    libffi-dev libncurses5-dev libncursesw5-dev xz-utils tk-dev uuid-dev tree
-  
+    libffi-dev libncurses-dev xz-utils tk-dev uuid-dev tree \
+    pkg-config libgdbm-dev liblzma-dev libnss3-dev
 fi
 
 echo "[✔] Pacotes CLI básicos instalados com sucesso!"
