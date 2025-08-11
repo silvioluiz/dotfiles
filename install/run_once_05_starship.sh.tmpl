@@ -1,7 +1,19 @@
 #!/bin/bash
 set -e
 
-echo "[+] Configurando Starship..."
+echo "[+] Instalando Starship..."
 
-mkdir -p ~/.config
-starship preset catppuccin-powerline -o ~/.config/starship.toml
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  brew install starship
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin"
+fi
+
+# garante que o bin local está acessível nesta sessão (Linux)
+export PATH="$HOME/.local/bin:$PATH"
+
+echo "[+] Aplicando preset catppuccin-powerline..."
+mkdir -p "$HOME/.config"
+starship preset catppuccin-powerline -o "$HOME/.config/starship.toml"
+
+echo "[✔] Starship instalado e configurado."
