@@ -18,8 +18,8 @@ UNIX_COMMON_PACKAGES=(
 
 )
 
-echo "[+] Instalando Atuin..."
-curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+#echo "[+] Instalando Atuin..."
+#curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 
 
 
@@ -74,10 +74,8 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   | bash
 
   echo "[+] Instalando nushell..."
-  curl -fsSL https://apt.fury.io/nushell/gpg.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/fury-nushell.gpg
-  echo "deb https://apt.fury.io/nushell/ /" | sudo tee /etc/apt/sources.list.d/fury.list
-  sudo apt install -y nushell
-
+  cargo install nu --locked
+  
   echo "[+] Instalando Yazi..."
   cargo install --locked yazi-fm yazi-cli
   
