@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+echo "[+] Instalando pacotes CLI utilitários..."
+
+COMMON_PACKAGES=(
+  
+  bat btop curlie dust fd-find fzf
+
+  htop k9s lazydocker lazygit navi nushell ripgrep
+
+  shellcheck starship yazi zoxide
+)
+
+echo "[+] Instalando Atuin..."
+curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+
+
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  COMMON_PACKAGES+=(fd eza hurl)
+  echo "[+] Instalando via Homebrew..."
+  brew install "${COMMON_PACKAGES[@]}"
+  echo "[+] Instalando k9s..."
+  brew install derailed/k9s/k9s
+
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  echo "[+] Instalando via APT..."
+  sudo apt update
+  sudo apt install -y "${COMMON_PACKAGES[@]}"
+
+  echo "[+] Adicionando repositório eza-community/eza..."
+  sudo mkdir -p /etc/apt/keyrings
+  wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | \
+    sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
+    sudo tee /etc/apt/sources.list.d/eza.list > /dev/null
+  sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/eza.list
+  sudo apt install -y eza
+
+  echo "[+] Instalando Hurl (.deb oficial)..."
+  VERSION=7.0.0
+  sudo apt-add-repository -y ppa:lepapareil/hurl
+  sudo apt install -y hurl="${VERSION}"*
+
+  echo "[+] Instalando k9s..."
+  # tenta 'classic' primeiro; se não rolar, cai para 'devmode'
+  sudo snap install k9s --classic || sudo snap install k9s --devmode
+fi
+
+echo "[✔] Pacotes CLI básicos instalados com sucesso!"

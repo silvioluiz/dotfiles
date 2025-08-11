@@ -22,9 +22,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   fi
 
   echo "[+] Instalando via Homebrew..."
-  brew install autoconf automake git gnupg ncurses tree unzip
-  brew install k9s eza
-
+  brew install autoconf automake git gnupg ncurses pkg-config tree unzip
+  
 elif [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "linux"* ]]; then
   echo "[+] Instalando via APT..."
   sudo apt-get update -y
@@ -34,8 +33,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "linux"* ]]; then
     libffi-dev libncurses-dev xz-utils tk-dev uuid-dev tree \
     pkg-config libgdbm-dev liblzma-dev libnss3-dev
   sudo apt-get install -y snapd
-    # tenta 'classic' primeiro; se não rolar, cai para 'devmode'
-  sudo snap install k9s --classic || sudo snap install k9s --devmode
 
 fi
 
