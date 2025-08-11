@@ -7,5 +7,5 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   brew install tmux zellij
 else
   sudo apt install -y tmux
-  cargo install --locked zellij
+  mise exec -- cargo install zellij --locked 
 fi
