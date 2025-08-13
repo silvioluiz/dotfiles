@@ -1,11 +1,16 @@
 # mise.toml — base global
 [settings]
 experimental = true
+cargo.binstall = true
+npm.bun = true   # usa bun no lugar do npm se estiver no PATH
+pipx.uvx = true  # usa uvx no lugar do pipx se uv estiver no PATH
 
-usage = "latest"
+[plugins]
+usage = "https://github.com/jdx/mise-usage"
 
 [tools]
 # Linguagens / runtimes
+usage = "latest"
 node = "lts"
 python = "latest"
 go = "latest"
