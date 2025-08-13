@@ -74,10 +74,10 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   | bash
 
   echo "[+] Instalando nushell..."
-  mise exec -- cargo install nu --locked
+  mise exec -- cargo binstall nu --locked
   
   echo "[+] Instalando Yazi..."
-  mise exec -- cargo install yazi-fm yazi-cli --locked
+  mise exec -- cargo binstall yazi-fm yazi-cli --locked
   
 fi
 
