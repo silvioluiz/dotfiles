@@ -1,34 +1,109 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "[+] Instalando Oh My Zsh e plugins..."
+echo "[+] Configurando zsh + oh-my-zsh + plugins (sem prompts)..."
 
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  export RUNZSH=no
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
+OS="$(uname -s)"
+ZSH_PATH=""
 
-if command -v zsh &>/dev/null; then
-  echo "[+] Definindo zsh como shell padrão..."
-  chsh -s "$(which zsh)"
+case "$OS" in
+  Darwin)
+    echo "[+] macOS (Apple Silicon) detectado"
+    ZSH_PATH="/opt/homebrew/bin/zsh"
+    # Instala zsh via Homebrew somente se faltar (não-interativo)
+    if [[ ! -x "$ZSH_PATH" ]]; then
+      brew install zsh
+    fi
+    ;;
+  Linux)
+    if [[ -f /etc/os-release ]] && grep -qi '^ID=ubuntu' /etc/os-release; then
+      echo "[+] Ubuntu detectado"
+      ZSH_PATH="/usr/bin/zsh"
+      # Instala zsh via apt somente se faltar (sem update/sem git/curl)
+      if [[ ! -x "$ZSH_PATH" ]]; then
+        sudo -n DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || {
+          echo "[!] apt-get install exigiu senha. Pulando instalação do zsh."
+        }
+      fi
+    else
+      echo "[!] Linux não suportado. Use Ubuntu."
+      exit 1
+    fi
+    ;;
+  *)
+    echo "[!] SO não suportado. Use macOS (Apple Silicon) ou Ubuntu."
+    exit 1
+    ;;
+esac
 
-  if [[ "$SHELL" != *"zsh" ]]; then
-    echo "[+] Iniciando nova sessão zsh..."
-    exec zsh
+install_ohmyzsh() {
+  if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
+    echo "[+] Instalando Oh My Zsh (não-interativo)..."
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   fi
-fi
+}
 
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-mkdir -p "$ZSH_CUSTOM/plugins"
+set_default_shell_or_fallback() {
+  # 1) Garante presença em /etc/shells (sem prompt); se falhar, pula para fallback
+  if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
+    echo "[+] Adicionando $ZSH_PATH a /etc/shells..."
+    echo "$ZSH_PATH" | sudo -n tee -a /etc/shells >/dev/null || {
+      echo "[!] Não foi possível escrever em /etc/shells sem senha."
+      fallback_exec_in_bashrc
+      return
+    }
+  fi
+  # 2) Define zsh como shell padrão (sem prompt); se falhar, aplica fallback
+  echo "[+] Tornando zsh o shell padrão..."
+  sudo -n chsh -s "$ZSH_PATH" "$USER" || {
+    echo "[!] chsh exigiu senha. Aplicando fallback sem privilégios."
+    fallback_exec_in_bashrc
+  }
+}
 
-echo "[+] Instalando plugins extras do Oh My Zsh..."
-git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-git clone --depth=1 https://github.com/MichaelAquilina/zsh-you-should-use "$ZSH_CUSTOM/plugins/you-should-use"
-git clone --depth=1 https://github.com/TamCore/zsh-interactive-cd "$ZSH_CUSTOM/plugins/zsh-interactive-cd"
-git clone --depth=1 https://github.com/psprint/zsh-navigation-tools "$ZSH_CUSTOM/plugins/zsh-navigation-tools"
-git clone --depth=1 https://github.com/djui/alias-finder "$ZSH_CUSTOM/plugins/alias-finder"
-git clone --depth=1 https://github.com/wintermi/zsh-mise "$ZSH_CUSTOM/plugins/zsh-mise"
+fallback_exec_in_bashrc() {
+  # Garante que novas sessões bash entrem no zsh automaticamente (sem sudo)
+  if [[ -f "$HOME/.bashrc" ]]; then
+    if ! grep -q 'exec .*zsh' "$HOME/.bashrc"; then
+      echo '[ -t 1 ] && command -v zsh >/dev/null 2>&1 && exec zsh -l' >> "$HOME/.bashrc"
+      echo "[i] Fallback aplicado: exec zsh adicionado ao ~/.bashrc"
+    fi
+  else
+    echo '[ -t 1 ] && command -v zsh >/dev/null 2>&1 && exec zsh -l' > "$HOME/.bashrc"
+    echo "[i] Fallback aplicado: criado ~/.bashrc com exec zsh"
+  fi
+}
 
+install_or_update_plugin() {
+  local url="$1" dest="$2"
+  if [[ -d "$dest/.git" ]]; then
+    git -C "$dest" pull --ff-only >/dev/null || true
+  elif [[ ! -d "$dest" ]]; then
+    git clone --depth=1 "$url" "$dest" >/dev/null
+  fi
+}
+
+install_plugins() {
+  local ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+  mkdir -p "$ZSH_CUSTOM/plugins"
+
+  echo "[+] Instalando/atualizando plugins..."
+  install_or_update_plugin https://github.com/zsh-users/zsh-autosuggestions      "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+  install_or_update_plugin https://github.com/zsh-users/zsh-syntax-highlighting  "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+  install_or_update_plugin https://github.com/MichaelAquilina/zsh-you-should-use "$ZSH_CUSTOM/plugins/you-should-use"
+  install_or_update_plugin https://github.com/TamCore/zsh-interactive-cd         "$ZSH_CUSTOM/plugins/zsh-interactive-cd"
+  install_or_update_plugin https://github.com/psprint/zsh-navigation-tools       "$ZSH_CUSTOM/plugins/zsh-navigation-tools"
+  install_or_update_plugin https://github.com/djui/alias-finder                  "$ZSH_CUSTOM/plugins/alias-finder"
+  install_or_update_plugin https://github.com/wintermi/zsh-mise                  "$ZSH_CUSTOM/plugins/zsh-mise"
+}
+
+install_ohmyzsh
+install_plugins
+set_default_shell_or_fallback
 
 echo "[✔] Zsh configurado com sucesso."
+echo "[+] Iniciando nova sessão zsh..."
+exec "$ZSH_PATH" -l
+
+
