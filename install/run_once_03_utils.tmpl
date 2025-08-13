@@ -7,14 +7,14 @@ MACOS_COMMON_PACKAGES=(
   
   bat btop curlie dust eza fd fzf htop hurl
 
-  k9s lazydocker navi nushell ripgrep
+  k9s lazydocker navi neovim nushell ripgrep
 
   shellcheck starship yazi zoxide
 )
 
 UNIX_COMMON_PACKAGES=(
   
-    bat btop fd-find fzf htop   ripgrep shellcheck zoxide
+    bat btop fd-find fzf htop neovim  ripgrep shellcheck zoxide
 
 )
 
@@ -50,8 +50,14 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   sudo apt install -y eza
 
   echo "[+] Instalando k9s..."
-  # tenta 'classic' primeiro; se não rolar, cai para 'devmode'
-  sudo snap install k9s --classic || sudo snap install k9s --devmode
+  sudo snap remove --purge k9s || true
+  arch="$(dpkg --print-architecture)"   # amd64 ou arm64
+  wget -q -O /tmp/k9s.deb "https://github.com/derailed/k9s/releases/latest/download/k9s_linux_${arch}.deb" \
+  || wget -q -O /tmp/k9s.deb "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_${arch}.deb"
+  sudo apt install -y /tmp/k9s.deb || { sudo apt -f install -y && sudo apt install -y /tmp/k9s.deb; }
+  rm -f /tmp/k9s.deb
+  which k9s
+  k9s version
 
   echo "[+] Instalando lazydocker..."
   curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
@@ -73,11 +79,12 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   curl -fsSL https://raw.githubusercontent.com/denisidoro/navi/master/scripts/install \
   | bash
 
+  
   echo "[+] Instalando nushell..."
-  mise exec -- cargo binstall nu --locked
+  mise exec -- cargo binstall -y nu --locked
   
   echo "[+] Instalando Yazi..."
-  mise exec -- cargo binstall yazi-fm yazi-cli --locked
+  mise exec -- cargo binstall -y yazi-fm yazi-cli --locked
   
 fi
 
