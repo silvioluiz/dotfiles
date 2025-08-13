@@ -1,5 +1,5 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 echo "[+] Instalando mise..."
 
@@ -18,10 +18,28 @@ elif [[ "$OSTYPE" == "linux"* ]]; then
   fi
 fi
 
-echo "[+] Configurando runtimes globais..."
+# Garante PATHs úteis para os próximos passos
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+echo "[+] Garantindo cargo-binstall no PATH..."
+if ! command -v cargo-binstall >/dev/null 2>&1; then
+  # Instala cargo-binstall via binário (sem compilar o mundo)
+  # Fonte oficial: https://github.com/cargo-bins/cargo-binstall
+  curl -fsSL \
+    https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh \
+    | bash
+else
+  echo "[✓] cargo-binstall já instalado."
+fi
+
+# (Opcional) valida versão e mostra onde está
+if command -v cargo-binstall >/dev/null 2>&1; then
+  echo "[i] cargo-binstall: $(command -v cargo-binstall)"
+  cargo-binstall --version || true
+fi
+
+echo "[+] Configurando runtimes e ferramentas globais com mise..."
+# --yes para auto-confirmar prompts de instalação (onde suportado)
 mise install --yes
 
-# se for usar o binário instalado pelo cargo ainda neste script:
-#export PATH="$HOME/.cargo/bin:$PATH"
-
-echo "[✔] mise pronto (Node LTS, Python latest, Go latest), além de utilitários diversos."
+echo "[✔] mise pronto (runtimes e CLIs instalados conforme config.toml)."
