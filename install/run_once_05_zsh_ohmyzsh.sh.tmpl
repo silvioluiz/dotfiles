@@ -1,109 +1,90 @@
 #!/usr/bin/env bash
+# run_once_05_zsh_ohmyzsh.sh.tmpl
 set -euo pipefail
 
-echo "[+] Configurando zsh + oh-my-zsh + plugins (sem prompts)..."
+log() { printf "[zsh-setup] %s\n" "$*"; }
+have() { command -v "$1" >/dev/null 2>&1; }
 
-OS="$(uname -s)"
-ZSH_PATH=""
-
-case "$OS" in
-  Darwin)
-    echo "[+] macOS (Apple Silicon) detectado"
-    ZSH_PATH="/opt/homebrew/bin/zsh"
-    # Instala zsh via Homebrew somente se faltar (não-interativo)
-    if [[ ! -x "$ZSH_PATH" ]]; then
-      brew install zsh
-    fi
-    ;;
-  Linux)
-    if [[ -f /etc/os-release ]] && grep -qi '^ID=ubuntu' /etc/os-release; then
-      echo "[+] Ubuntu detectado"
-      ZSH_PATH="/usr/bin/zsh"
-      # Instala zsh via apt somente se faltar (sem update/sem git/curl)
-      if [[ ! -x "$ZSH_PATH" ]]; then
-        sudo -n DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || {
-          echo "[!] apt-get install exigiu senha. Pulando instalação do zsh."
-        }
-      fi
-    else
-      echo "[!] Linux não suportado. Use Ubuntu."
-      exit 1
-    fi
-    ;;
-  *)
-    echo "[!] SO não suportado. Use macOS (Apple Silicon) ou Ubuntu."
-    exit 1
-    ;;
-esac
+# Executa comando com sudo NÃO interativo; se não for permitido, apenas loga e segue.
+sudo_n() {
+  if have sudo && sudo -n true 2>/dev/null; then
+    sudo -n "$@"
+  else
+    log "sudo -n indisponível para: $* (sem prompt). Pulando esta etapa."
+    return 1
+  fi
+}
 
 install_ohmyzsh() {
-  if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-    echo "[+] Instalando Oh My Zsh (não-interativo)..."
-    RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
-      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  if [ -d "$HOME/.oh-my-zsh" ]; then
+    log "Oh My Zsh já presente em ~/.oh-my-zsh — pulando instalação."
+    return 0
   fi
+  if ! have curl; then
+    log "curl não encontrado — instale curl e rode novamente."
+    exit 1
+  fi
+  # Instala OMZ sem criar .zshrc e sem chsh
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
 }
 
-set_default_shell_or_fallback() {
-  # 1) Garante presença em /etc/shells (sem prompt); se falhar, pula para fallback
-  if ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
-    echo "[+] Adicionando $ZSH_PATH a /etc/shells..."
-    echo "$ZSH_PATH" | sudo -n tee -a /etc/shells >/dev/null || {
-      echo "[!] Não foi possível escrever em /etc/shells sem senha."
-      fallback_exec_in_bashrc
-      return
-    }
-  fi
-  # 2) Define zsh como shell padrão (sem prompt); se falhar, aplica fallback
-  echo "[+] Tornando zsh o shell padrão..."
-  sudo -n chsh -s "$ZSH_PATH" "$USER" || {
-    echo "[!] chsh exigiu senha. Aplicando fallback sem privilégios."
-    fallback_exec_in_bashrc
-  }
-}
+OS="{{ .chezmoi.os }}"
 
-fallback_exec_in_bashrc() {
-  # Garante que novas sessões bash entrem no zsh automaticamente (sem sudo)
-  if [[ -f "$HOME/.bashrc" ]]; then
-    if ! grep -q 'exec .*zsh' "$HOME/.bashrc"; then
-      echo '[ -t 1 ] && command -v zsh >/dev/null 2>&1 && exec zsh -l' >> "$HOME/.bashrc"
-      echo "[i] Fallback aplicado: exec zsh adicionado ao ~/.bashrc"
+if [ "$OS" = "darwin" ]; then
+  # =========================
+  # macOS: não instalar zsh, não alterar shell padrão
+  # =========================
+  log "macOS detectado — NÃO instalar zsh e NÃO alterar shell padrão."
+  if have zsh; then
+    log "zsh detectado: $(zsh --version) em $(which zsh)"
+  else
+    log "Aviso: zsh não encontrado no PATH (incomum no macOS). Verifique /bin/zsh."
+  fi
+  install_ohmyzsh
+  log "Concluído no macOS (sem brew install, sem chsh, sem criar .zshrc)."
+
+elif [ "$OS" = "linux" ]; then
+  # =========================
+  # Linux (Ubuntu): instalar zsh se faltar e mudar shell padrão SEM prompt
+  # =========================
+  DIST_ID="$(. /etc/os-release 2>/dev/null && echo "${ID:-}")"
+  if [ "${DIST_ID}" != "ubuntu" ]; then
+    log "Linux detectado (ID='${DIST_ID:-?}'). Seguindo fluxo genérico."
+  fi
+
+  if ! have zsh; then
+    log "zsh não encontrado — tentando instalar via apt (sem prompt)..."
+    if have apt-get; then
+      sudo_n apt-get update -y && sudo_n apt-get install -y zsh || log "Não foi possível instalar zsh sem prompt."
+    else
+      log "apt-get não encontrado. Instale zsh manualmente e rode novamente."
+    fi
+  fi
+
+  # Determina caminho do zsh (se disponível após a etapa acima)
+  ZSH_PATH="$(command -v zsh || true)"
+  if [ -n "${ZSH_PATH}" ]; then
+    # Garante entrada em /etc/shells (sem prompt)
+    if [ -f /etc/shells ] && ! grep -q "^${ZSH_PATH}$" /etc/shells 2>/dev/null; then
+      log "Adicionando ${ZSH_PATH} a /etc/shells (sem prompt)..."
+      sudo_n /bin/sh -c "echo '${ZSH_PATH}' >> /etc/shells" || true
+    fi
+
+    # Muda shell padrão (sem prompt). Se não puder, só loga.
+    CURRENT_SHELL="$(getent passwd "$USER" | awk -F: '{print $7}' || true)"
+    if [ "${CURRENT_SHELL:-}" != "${ZSH_PATH}" ]; then
+      log "Alterando shell padrão para ${ZSH_PATH} (sem prompt)..."
+      sudo_n chsh -s "${ZSH_PATH}" "${USER}" || log "Não foi possível alterar shell padrão sem prompt."
+    else
+      log "Shell padrão já é ${ZSH_PATH}"
     fi
   else
-    echo '[ -t 1 ] && command -v zsh >/dev/null 2>&1 && exec zsh -l' > "$HOME/.bashrc"
-    echo "[i] Fallback aplicado: criado ~/.bashrc com exec zsh"
+    log "zsh ainda indisponível após tentativa de instalação."
   fi
-}
 
-install_or_update_plugin() {
-  local url="$1" dest="$2"
-  if [[ -d "$dest/.git" ]]; then
-    git -C "$dest" pull --ff-only >/dev/null || true
-  elif [[ ! -d "$dest" ]]; then
-    git clone --depth=1 "$url" "$dest" >/dev/null
-  fi
-}
+  install_ohmyzsh
+  log "Concluído no Ubuntu (zsh presente se possível, tentativa de chsh sem prompt, sem criar .zshrc)."
 
-install_plugins() {
-  local ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-  mkdir -p "$ZSH_CUSTOM/plugins"
-
-  echo "[+] Instalando/atualizando plugins..."
-  install_or_update_plugin https://github.com/zsh-users/zsh-autosuggestions      "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-  install_or_update_plugin https://github.com/zsh-users/zsh-syntax-highlighting  "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-  install_or_update_plugin https://github.com/MichaelAquilina/zsh-you-should-use "$ZSH_CUSTOM/plugins/you-should-use"
-  install_or_update_plugin https://github.com/TamCore/zsh-interactive-cd         "$ZSH_CUSTOM/plugins/zsh-interactive-cd"
-  install_or_update_plugin https://github.com/psprint/zsh-navigation-tools       "$ZSH_CUSTOM/plugins/zsh-navigation-tools"
-  install_or_update_plugin https://github.com/djui/alias-finder                  "$ZSH_CUSTOM/plugins/alias-finder"
-  install_or_update_plugin https://github.com/wintermi/zsh-mise                  "$ZSH_CUSTOM/plugins/zsh-mise"
-}
-
-install_ohmyzsh
-install_plugins
-set_default_shell_or_fallback
-
-echo "[✔] Zsh configurado com sucesso."
-echo "[+] Iniciando nova sessão zsh..."
-exec "$ZSH_PATH" -l
-
-
+else
+  log "SO não reconhecido pelo template (.chezmoi.os='$OS'). Sem ações."
+fi
