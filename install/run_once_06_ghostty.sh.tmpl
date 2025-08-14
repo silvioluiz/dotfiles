@@ -1,6 +1,46 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "[+] Instalando Ghostty..."
+OS="$(uname -s)"
+LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "$LOCAL_BIN"
 
-curl -sSf https://ghostty.org/install.sh | sh
+case "$OS" in
+  Darwin)
+    # macOS: Homebrew Cask (assume brew presente)
+    brew install --cask ghostty
+
+    # Garantir CLI no PATH para uso com zellij/tmux
+    ln -sf "/Applications/Ghostty.app/Contents/MacOS/ghostty" "$LOCAL_BIN/ghostty"
+
+    echo "[i] macOS: Ghostty instalado via Homebrew Cask."
+    echo "[i] CLI disponível em $LOCAL_BIN/ghostty (adicione ~/.local/bin ao PATH se ainda não estiver)."
+    ;;
+
+  Linux)
+    # Ubuntu/Linux: Snap (canal estável)
+    sudo snap install ghostty --classic
+
+    # Se ainda não estiver no PATH desta sessão, exporta /snap/bin
+    if ! command -v ghostty >/dev/null 2>&1; then
+      export PATH="/snap/bin:$PATH"
+      echo "[i] PATH atualizado para incluir /snap/bin nesta sessão."
+    fi
+
+    echo "[i] Linux: Ghostty instalado via Snap."
+    ;;
+
+  *)
+    echo "SO não suportado automaticamente: $OS" >&2
+    exit 1
+    ;;
+esac
+
+# Checagem rápida
+if command -v ghostty >/dev/null 2>&1; then
+  echo "[✓] Ghostty: $(ghostty --version || true)"
+  echo "[i] Exemplos: 'ghostty -e zellij' ou 'ghostty -e tmux'"
+else
+  echo "[!] Ghostty não apareceu no PATH nesta sessão. Adicione ao seu shell:"
+  echo '    export PATH="$HOME/.local/bin:/snap/bin:$PATH"'
+fi
