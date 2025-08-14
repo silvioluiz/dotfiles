@@ -4,16 +4,32 @@ set -e
 echo "[+] Instalando Starship..."
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS: assume Homebrew presente
   brew install starship
-elif [[ "$OSTYPE" == "linux"* ]]; then
-  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
-fi
+  echo "[+] Instalando JetBrainsMono Nerd Font (macOS)…"
+  brew tap homebrew/cask-fonts
+  brew install --cask font-jetbrains-mono-nerd-font
 
-# garante que o bin local está acessível nesta sessão (Linux)
-export PATH="$HOME/.local/bin:$PATH"
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  # Linux: script oficial do Starship
+  curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
+
+  # Instala JetBrainsMono Nerd Font no usuário
+  echo "[+] Instalando JetBrainsMono Nerd Font (Linux)…"
+  mkdir -p "$HOME/.local/share/fonts"
+  cd "$HOME/.local/share/fonts"
+  curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz
+  tar -xJf JetBrainsMono.tar.xz
+  rm -f JetBrainsMono.tar.xz
+  command -v fc-cache >/dev/null 2>&1 && fc-cache -fv || true
+
+  # garante que o bin local está acessível nesta sessão (Linux)
+  export PATH="$HOME/.local/bin:$PATH"
+fi
 
 echo "[+] Aplicando preset catppuccin-powerline..."
 mkdir -p "$HOME/.config"
 starship preset catppuccin-powerline -o "$HOME/.config/starship.toml"
 
 echo "[✔] Starship instalado e configurado."
+echo "    > Use a fonte: JetBrainsMono Nerd Font Mono (já instalada)."
