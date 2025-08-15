@@ -1,0 +1,10 @@
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Clona LazyVim starter em ~/.config/lazyvim se ainda não existir
+if [ ! -d "$HOME/.config/lazyvim" ]; then
+  echo "[+] Clonando LazyVim starter em ~/.config/lazyvim"
+  git clone https://github.com/LazyVim/starter "$HOME/.config/lazyvim"
+  rm -rf "$HOME/.config/lazyvim/.git"
+fi

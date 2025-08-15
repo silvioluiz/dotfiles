@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 022
+
+# Evita prompts de credencial/TTY
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=/bin/true
+
+log(){ printf "[plugins] %s\n" "$*"; }
+have(){ command -v "$1" >/dev/null 2>&1; }
+
+if [ ! -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
+  log "Oh My Zsh ainda não instalado; saindo."
+  exit 0
+fi
+
+if ! have git; then
+  log "git não encontrado no PATH; instale git e rode novamente."
+  exit 0
+fi
+
+ZSH_DIR="${ZSH:-$HOME/.oh-my-zsh}"
+ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH_DIR/custom}"
+PLUGDIR="$ZSH_CUSTOM/plugins"
+
+# Toggles
+USE_YOU_SHOULD_USE="${USE_YOU_SHOULD_USE:-yes}"
+USE_ZSH_AUTOSUGGESTIONS="${USE_ZSH_AUTOSUGGESTIONS:-yes}"
+USE_ZSH_SYNTAX_HIGHLIGHTING="${USE_ZSH_SYNTAX_HIGHLIGHTING:-yes}"
+USE_ZSH_COMPLETIONS="${USE_ZSH_COMPLETIONS:-yes}"
+USE_FZF_TAB="${USE_FZF_TAB:-no}"
+
+mkdir -p "$PLUGDIR"
+
+safe_dest(){
+  local dest="$1"
+  if [[ -d "$dest" && ! -d "$dest/.git" ]]; then
+    log "Diretório existe mas não é git: $dest (fazendo backup .old)"
+    rm -rf "${dest}.old" 2>/dev/null || true
+    mv "$dest" "${dest}.old"
+  fi
+}
+
+clone_or_update () {
+  local repo_url="$1" dest="$2"
+  safe_dest "$dest"
+  if [[ -d "$dest/.git" ]]; then
+    log "Atualizando $(basename "$dest")..."
+    # fetch leve + reset para o default branch remoto
+    git -C "$dest" fetch --force --prune --depth=1 origin >/dev/null 2>&1 || true
+    if ! git -C "$dest" reset --hard origin/HEAD >/dev/null 2>&1; then
+      # fallback: detecta default branch
+      defb="$(git -C "$dest" remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')"
+      if [[ -n "${defb:-}" ]]; then
+        git -C "$dest" reset --hard "origin/${defb}" >/dev/null 2>&1 || true
+      fi
+    fi
+  else
+    log "Clonando $(basename "$dest")..."
+    git clone --depth=1 --filter=blob:none "$repo_url" "$dest" >/dev/null
+  fi
+}
+
+# you-should-use
+[[ "$USE_YOU_SHOULD_USE" == "yes" ]] && \
+  clone_or_update "https://github.com/MichaelAquilina/zsh-you-should-use.git" \
+                  "$PLUGDIR/you-should-use"
+
+# zsh-autosuggestions
+[[ "$USE_ZSH_AUTOSUGGESTIONS" == "yes" ]] && \
+  clone_or_update "https://github.com/zsh-users/zsh-autosuggestions.git" \
+                  "$PLUGDIR/zsh-autosuggestions"
+
+# zsh-syntax-highlighting
+[[ "$USE_ZSH_SYNTAX_HIGHLIGHTING" == "yes" ]] && \
+  clone_or_update "https://github.com/zsh-users/zsh-syntax-highlighting.git" \
+                  "$PLUGDIR/zsh-syntax-highlighting"
+
+# zsh-completions (exige fpath no .zshrc antes do OMZ)
+[[ "$USE_ZSH_COMPLETIONS" == "yes" ]] && \
+  clone_or_update "https://github.com/zsh-users/zsh-completions.git" \
+                  "$PLUGDIR/zsh-completions"
+
+# fzf-tab (opcional)
+if [[ "$USE_FZF_TAB" == "yes" ]]; then
+  if ! have fzf; then
+    log "Aviso: fzf-tab habilitado mas 'fzf' não está no PATH."
+  fi
+  clone_or_update "https://github.com/Aloxaf/fzf-tab.git" \
+                  "$PLUGDIR/fzf-tab"
+fi
+
+log "Plugins 3rd-party prontos."

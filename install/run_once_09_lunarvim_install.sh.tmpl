@@ -1,0 +1,11 @@
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v lvim >/dev/null 2>&1; then
+  echo "[+] Instalando LunarVim (lvim)"
+  LV_BRANCH='release-1.3/neovim-0.9' bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)"
+fi
+
+mkdir -p "$HOME/.config/lvim"
+[ -f "$HOME/.config/lvim/config.lua" ] || touch "$HOME/.config/lvim/config.lua"
