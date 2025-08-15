@@ -83,15 +83,10 @@ for cli in aws gh gcloud; do
   command -v \$cli >/dev/null && echo \"✅ \$cli: \$($cli --version | head -n1)\" || echo \"❌ \$cli não encontrado\"
 done
 
-# 5. Multiplexadores
-for mux in tmux zellij; do
-  command -v \$mux >/dev/null && echo \"✅ \$mux: \$($mux -V 2>/dev/null || $mux --version)\" || echo \"❌ \$mux não encontrado\"
-done
-
-# 6. Neovim
+# 5. Neovim
 command -v nvim >/dev/null && echo '✅ Neovim: ' \$(nvim --version | head -n1) || echo '❌ Neovim não encontrado'
 
-# 7. Utilitários comuns
+# 6. Utilitários comuns
 for tool in atuin bat btop curlie dust eza fd fzf htop hurl k9s lazygit lazydocker navi nvim nu rg shellcheck starship yazi zoxide; do
   command -v \$tool >/dev/null && echo \"✅ \$tool\" || echo \"❌ \$tool não encontrado\"
 done

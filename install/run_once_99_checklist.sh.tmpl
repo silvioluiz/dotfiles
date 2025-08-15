@@ -4,7 +4,7 @@ set -e
 echo "===== 🚀 Iniciando checklist do ambiente chezmoi ====="
 
 # 1. Shell e prompt
-echo "[1/9] Testando shell e prompt..."
+echo "[1/8] Testando shell e prompt..."
 if [[ "$SHELL" == *"zsh" ]]; then
   echo "✅ Shell padrão é Zsh"
 else
@@ -18,7 +18,7 @@ else
 fi
 
 # 2. Plugins Zsh
-echo "[2/9] Testando plugins Zsh..."
+echo "[2/8] Testando plugins Zsh..."
 if [[ -n "$(typeset -f _fzf_tab_completion 2>/dev/null)" ]]; then
   echo "✅ fzf-tab carregado"
 else
@@ -38,7 +38,7 @@ else
 fi
 
 # 3. asdf e linguagens
-echo "[3/9] Testando mise..."
+echo "[3/8] Testando mise..."
 if command -v mise &>/dev/null; then
   echo "✅ mise instalado: $(mise --version | head -n1)"
 
@@ -69,7 +69,7 @@ fi
 
 
 # 4. CLIs cloud
-echo "[4/9] Testando CLIs cloud..."
+echo "[4/8] Testando CLIs cloud..."
 for cli in aws gh gcloud; do
   if command -v $cli &>/dev/null; then
     echo "✅ $cli instalado: $($cli --version | head -n1)"
@@ -78,18 +78,8 @@ for cli in aws gh gcloud; do
   fi
 done
 
-# 5. Multiplexadores
-echo "[5/9] Testando multiplexadores..."
-for mux in tmux zellij; do
-  if command -v $mux &>/dev/null; then
-    echo "✅ $mux instalado: $($mux -V 2>/dev/null || $mux --version)"
-  else
-    echo "❌ $mux não encontrado"
-  fi
-done
-
-# 6. Neovim
-echo "[6/9] Testando Neovim..."
+# 5. Neovim
+echo "[5/8] Testando Neovim..."
 if command -v nvim &>/dev/null; then
   echo "✅ Neovim instalado: $(nvim --version | head -n1)"
   if [[ -d "$HOME/.local/share/nvim/lazy/LazyVim" ]]; then
@@ -101,8 +91,8 @@ else
   echo "❌ Neovim não encontrado"
 fi
 
-# 7. Utilitários comuns
-echo "[7/9] Testando utilitários comuns..."
+# 6. Utilitários comuns
+echo "[6/8] Testando utilitários comuns..."
 COMMON_TOOLS=(atuin bat btop curlie dust eza fd fzf ghostty htop hurl k9s lazydocker lazygit navi nu rg shellcheck starship yazi zoxide  )
 # Nome “amigável” para exibir
 declare -A FRIENDLY=(
@@ -160,10 +150,10 @@ for tool in "${COMMON_TOOLS[@]}"; do
   fi
 done
 
-# 8. Validar PATH
-echo "[8/9] Validando PATH..."
+# 7. Validar PATH
+echo "[7/8] Validando PATH..."
 echo "$PATH" | tr ':' '\n'
 
 # 9. Finalização
-echo "[9/9] Checklist concluído!"
+echo "[8/8] Checklist concluído!"
 echo "===== ✅ Fim ====="
