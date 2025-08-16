@@ -35,7 +35,7 @@ fi
 # (Opcional) valida versão e mostra onde está
 if command -v cargo-binstall >/dev/null 2>&1; then
   echo "[i] cargo-binstall: $(command -v cargo-binstall)"
-  cargo-binstall --version || true
+  cargo-binstall -V || true
 fi
 
 echo "[+] Configurando runtimes e ferramentas globais com mise..."
