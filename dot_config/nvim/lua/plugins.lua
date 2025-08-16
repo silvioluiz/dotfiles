@@ -54,13 +54,6 @@ return {
       -- Ativa o mason, que gerencia os LSPs
       require('mason').setup()
 
-      -- Ativa o mason-lspconfig, que faz a ponte entre mason e lspconfig
-      require('mason-lspconfig').setup({
-        -- Lista de servidores para garantir que estejam instalados.
-        -- Deixe vazio para instalar sob demanda, ou adicione servidores. Ex: { "lua_ls", "pyright" }
-        ensure_installed = {},
-      })
-
       local lspconfig = require('lspconfig')
 
       -- Função a ser executada quando um servidor LSP se anexa a um buffer
@@ -76,14 +69,20 @@ return {
         bufmap('n', '<leader>ca', vim.lsp.buf.code_action, 'Code Action')
       end
 
-      -- Configura automaticamente os servidores instalados pelo Mason
-      -- para usar as configurações definidas acima (on_attach, etc)
-      require('mason-lspconfig').setup_handlers({
-        function(server_name) -- A configuração padrão
-          lspconfig[server_name].setup({
-            on_attach = on_attach,
-          })
-        end,
+      -- Combina a configuração do mason-lspconfig em uma única chamada `setup`
+      require('mason-lspconfig').setup({
+        -- Lista de servidores para garantir que estejam instalados.
+        -- Deixe vazio para instalar sob demanda. Ex: { "lua_ls", "pyright" }
+        ensure_installed = {},
+        -- A nova sintaxe usa uma tabela 'handlers'
+        handlers = {
+          -- O handler padrão será chamado para cada servidor instalado
+          function(server_name)
+            lspconfig[server_name].setup({
+              on_attach = on_attach,
+            })
+          end,
+        },
       })
     end,
   },
