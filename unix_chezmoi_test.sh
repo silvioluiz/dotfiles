@@ -35,19 +35,21 @@ multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\";
 multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi init --apply \"$GITHUB_USER\""
 
 echo "🧪 Criando script de checklist na VM..."
-multipass exec "$VM_NAME" -- bash -c "cat <<'EOF' > /tmp/chezmoi_test_checklist.sh
+# CORREÇÃO: Usamos 'cat <<'EOF' | multipass exec ...' para canalizar (pipe) o script
+# para a VM de forma segura, evitando erros de sintaxe com aspas aninhadas.
+cat <<'EOF' | multipass exec "$VM_NAME" -- tee /tmp/chezmoi_test_checklist.sh > /dev/null
 #!/bin/bash
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 echo '===== 🚀 Iniciando checklist do ambiente chezmoi ====='
 
 # 1. Shell
-[[ \"\$SHELL\" == *\"zsh\"* ]] && echo '✅ Shell padrão é Zsh' || echo '❌ Shell padrão não é Zsh'
-command -v starship >/dev/null && echo '✅ Starship: ' \$(starship --version) || echo '❌ Starship não encontrado'
+[[ "$SHELL" == *"zsh"* ]] && echo '✅ Shell padrão é Zsh' || echo '❌ Shell padrão não é Zsh'
+command -v starship >/dev/null && echo '✅ Starship: ' $(starship --version) || echo '❌ Starship não encontrado'
 
 # 2. Plugins
-[[ -n \"\$(typeset -f _fzf_tab_completion 2>/dev/null)\" ]] && echo '✅ fzf-tab' || echo '⚠️ fzf-tab não detectado'
-[[ -n \"\$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE\" ]] && echo '✅ zsh-autosuggestions' || echo '⚠️ zsh-autosuggestions não detectado'
+[[ -n "$(typeset -f _fzf_tab_completion 2>/dev/null)" ]] && echo '✅ fzf-tab' || echo '⚠️ fzf-tab não detectado'
+[[ -n "$ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE" ]] && echo '✅ zsh-autosuggestions' || echo '⚠️ zsh-autosuggestions não detectado'
 command -v zoxide >/dev/null && echo '✅ zoxide' || echo '❌ zoxide não encontrado'
 
 # 3. mise
@@ -80,19 +82,19 @@ fi
 
 # 4. CLIs cloud
 for cli in aws gh gcloud; do
-  command -v \$cli >/dev/null && echo \"✅ \$cli: \$($cli --version | head -n1)\" || echo \"❌ \$cli não encontrado\"
+  command -v $cli >/dev/null && echo "✅ $cli: $($cli --version | head -n1)" || echo "❌ $cli não encontrado"
 done
 
 # 5. Neovim
-command -v nvim >/dev/null && echo '✅ Neovim: ' \$(nvim --version | head -n1) || echo '❌ Neovim não encontrado'
+command -v nvim >/dev/null && echo '✅ Neovim: ' $(nvim --version | head -n1) || echo '❌ Neovim não encontrado'
 
 # 6. Utilitários comuns
 for tool in atuin bat btop curlie dust eza fd fzf htop hurl k9s lazygit lazydocker navi nvim nu rg shellcheck starship yazi zoxide; do
-  command -v \$tool >/dev/null && echo \"✅ \$tool\" || echo \"❌ \$tool não encontrado\"
+  command -v $tool >/dev/null && echo "✅ $tool" || echo "❌ $tool não encontrado"
 done
 
 echo '===== ✅ Fim ====='
-EOF"
+EOF
 
 multipass exec "$VM_NAME" -- chmod +x /tmp/chezmoi_test_checklist.sh
 
