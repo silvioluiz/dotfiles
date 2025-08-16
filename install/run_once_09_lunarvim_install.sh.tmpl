@@ -1,25 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 1. Ativa o ambiente mise para garantir que `cargo`, `cargo-binstall`, etc. estejam no PATH
 if command -v mise >/dev/null 2>&1; then
   echo "[+] Ativando ambiente mise..."
   eval "$(mise activate bash)"
 else
-  # Medida de segurança caso o mise ainda não tenha sido instalado
   echo "[!] Comando 'mise' não encontrado. Pulando a ativação." >&2
 fi
 
+# 2. Define a função de interceptação para otimizar a instalação do Rust
+#    Apenas define a função se 'cargo-binstall' estiver disponível
+if command -v cargo-binstall >/dev/null 2>&1; then
+
+  echo "[i] Otimização ativada: 'cargo-binstall' será usado no lugar de 'cargo install'."
+
+  # Define uma função temporária chamada 'cargo' para interceptar chamadas.
+  cargo() {
+    # Verifica se o primeiro argumento é "install"
+    if [[ "$1" == "install" ]]; then
+      echo "[+] Interceptado 'cargo install'. Tentando com 'cargo-binstall'..."
+      # Tenta usar o cargo-binstall com os argumentos originais (exceto 'install').
+      # A flag '--no-confirm' é útil para automação.
+      # Se o binstall falhar (||), executa o comando original como fallback.
+      command cargo-binstall --no-confirm "${@:2}" || {
+        echo "[!] 'cargo-binstall' falhou, retornando para o 'cargo install' original..."
+        command cargo "$@"
+      }
+    else
+      # Se o comando não for 'install', apenas execute o comando 'cargo' real.
+      # O uso de 'command' aqui é crucial para evitar um loop infinito.
+      command cargo "$@"
+    fi
+  }
+
+  # Exporta a função 'cargo' para que ela esteja disponível nos subshells.
+  # Isso é ESSENCIAL para que o `bash -c "..."` do instalador a enxergue.
+  export -f cargo
+
+fi
+
+# 3. Executa o instalador do LunarVim
 if ! command -v lvim >/dev/null 2>&1; then
   echo "[+] Instalando LunarVim (lvim)..."
-  
-  # Adicionei a flag `-- --yes` para automatizar as respostas "y" (sim)
-  # para as perguntas de instalação das dependências.
+  # Este comando agora usará nossa função 'cargo' interceptada, se disponível.
   LV_BRANCH='release-1.3/neovim-0.9' bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)" -- --yes
 else
   echo "[~] LunarVim (lvim) já está instalado."
 fi
 
-mkdir -p "$HOME/.config/lvim"
-[ -f "$HOME/.config/lvim/config.lua" ] || touch "$HOME/.config/lvim/config.lua"
-echo "[✔] Script de instalação do LunarVim concluído."
+# 4. Limpa o ambiente (boa prática)
+#    Remove a função exportada para que não afete outros comandos no futuro.
+unset -f cargo
 
+echo "[+] Garantindo que o diretório e o arquivo de configuração do lvim existam..."
+mkdir -p "$HOME/.config/lvim"
+touch "$HOME/.config/lvim/config.lua"
+
+echo "[✔] Script de instalação do LunarVim concluído."
