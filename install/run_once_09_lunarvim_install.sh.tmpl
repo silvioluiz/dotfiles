@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if command -v mise >/dev/null 2>&1; then
+  echo "[+] Ativando ambiente mise..."
+  eval "$(mise activate bash)"
+else
+  # Medida de segurança caso o mise ainda não tenha sido instalado
+  echo "[!] Comando 'mise' não encontrado. Pulando a ativação." >&2
+fi
+
 if ! command -v lvim >/dev/null 2>&1; then
-  echo "[+] Instalando LunarVim (lvim)"
-  LV_BRANCH='release-1.3/neovim-0.9' bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)"
+  echo "[+] Instalando LunarVim (lvim)..."
+  
+  # Adicionei a flag `-- --yes` para automatizar as respostas "y" (sim)
+  # para as perguntas de instalação das dependências.
+  LV_BRANCH='release-1.3/neovim-0.9' bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)" -- --yes
+else
+  echo "[~] LunarVim (lvim) já está instalado."
 fi
 
 mkdir -p "$HOME/.config/lvim"
 [ -f "$HOME/.config/lvim/config.lua" ] || touch "$HOME/.config/lvim/config.lua"
+echo "[✔] Script de instalação do LunarVim concluído."
+
