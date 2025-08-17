@@ -44,7 +44,7 @@ fi
 if ! command -v lvim >/dev/null 2>&1; then
   echo "[+] Instalando LunarVim (lvim)..."
   # Este comando agora usará nossa função 'cargo' interceptada, se disponível.
-  LV_BRANCH='release-1.3/neovim-0.9' bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)" -- --yes
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)" -- --yes
 else
   echo "[~] LunarVim (lvim) já está instalado."
 fi
