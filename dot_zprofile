@@ -1,0 +1,28 @@
+# ~/.zprofile
+# 1. Adiciona o diretório de binários do usuário (~/.local/bin) ao PATH.
+#    Usado por mise, chezmoi, e outros scripts de instalação.
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
+# 2. Adiciona o diretório de binários do Cargo/Rust (~/.cargo/bin) ao PATH.
+#    Usado para ferramentas instaladas com 'cargo install' ou 'cargo binstall'.
+if [ -d "$HOME/.cargo/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.cargo/bin:"*) ;;
+    *) export PATH="$HOME/.cargo/bin:$PATH" ;;
+  esac
+fi
+
+# --- Configuração Específica para macOS ---
+# 3. Configura o ambiente do Homebrew se estiver no macOS.
+#    Esta é a maneira oficial e recomendada de colocar o 'brew' no PATH.
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  # Procura primeiro no caminho de Apple Silicon, depois no de Intel.
+  if [ -x "/opt/homebrew/bin/brew" ]; then        # Apple Silicon
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x "/usr/local/bin/brew" ]; then      # Intel
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+fi
