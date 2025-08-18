@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+source "$(dirname "$0")/install/helpers/init_macos_env.sh"
+
 
 VM_NAME="chezmoi-test"
 UBUNTU_VERSION="24.04"
@@ -99,7 +101,7 @@ EOF
 multipass exec "$VM_NAME" -- chmod +x /tmp/chezmoi_test_checklist.sh
 
 echo "▶️ Rodando checklist..."
-multipass exec "$VM_NAME" -- /tmp/chezmoi_test_checklist.sh
+multipass exec "$VM_NAME" -- zsh -ic 'bash /tmp/chezmoi_test_checklist.sh'
 
 if [ "$CLEANUP" = true ]; then
   echo "🧹 Limpando VM..."

@@ -1,14 +1,7 @@
 #!/bin/bash
-#
-# Script auxiliar para configurar o ambiente para outros scripts chezmoi.
-# - No macOS, configura o PATH para o Homebrew.
-# - No Linux, não faz nada e termina com sucesso.
 
 # Verifica se estamos no macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    
-    # Este bloco SÓ é executado no macOS.
-    # Adiciona o Homebrew ao PATH da sessão ATUAL do script.
     
     # Prioriza o caminho do Apple Silicon, mas funciona para Intel também.
     if [ -x "/opt/homebrew/bin/brew" ]; then
