@@ -1,90 +1,147 @@
 #!/usr/bin/env bash
 # run_once_05_zsh_ohmyzsh.sh.tmpl
+#
+
+# Fail fast
 set -euo pipefail
 
-log() { printf "[zsh-setup] %s\n" "$*"; }
-have() { command -v "$1" >/dev/null 2>&1; }
+# --- Funções Auxiliares ---
 
-# Executa comando com sudo NÃO interativo; se não for permitido, apenas loga e segue.
+# Função de log padronizada
+log() {
+  printf "\033[34m[zsh-setup]\033[0m %s\n" "$*"
+}
+
+# Verifica se um comando existe no PATH
+have() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Executa um comando com sudo de forma NÃO interativa.
+# Se o usuário não tiver permissão sudo sem senha, apenas loga e falha graciosamente.
 sudo_n() {
   if have sudo && sudo -n true 2>/dev/null; then
+    log "Executando com sudo: $*"
     sudo -n "$@"
   else
-    log "sudo -n indisponível para: $* (sem prompt). Pulando esta etapa."
-    return 1
+    log "Aviso: sudo não interativo indisponível para: '$*'. Pulando."
+    return 1 # Retorna falha para que a lógica de chamada possa lidar com isso
   fi
 }
 
+# Instala Oh My Zsh se ainda não estiver instalado.
+# --unattended: Não tenta mudar o shell.
+# --keep-zshrc: Não sobrescreve um .zshrc existente (essencial para chezmoi).
 install_ohmyzsh() {
   if [ -d "$HOME/.oh-my-zsh" ]; then
-    log "Oh My Zsh já presente em ~/.oh-my-zsh — pulando instalação."
+    log "Oh My Zsh já está instalado em ~/.oh-my-zsh. Nenhuma ação necessária."
     return 0
   fi
-  if ! have curl; then
-    log "curl não encontrado — instale curl e rode novamente."
-    exit 1
-  fi
-  # Instala OMZ sem criar .zshrc e sem chsh
+
+  log "Instalando Oh My Zsh..."
+  # A variável vazia "" antes dos flags é necessária para o instalador em modo não interativo
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
+  log "Oh My Zsh instalado com sucesso."
 }
+
+# --- Lógica Principal ---
 
 OS="{{ .chezmoi.os }}"
 
-if [ "$OS" = "darwin" ]; then
-  # =========================
-  # macOS: não instalar zsh, não alterar shell padrão
-  # =========================
-  log "macOS detectado — NÃO instalar zsh e NÃO alterar shell padrão."
-  if have zsh; then
-    log "zsh detectado: $(zsh --version) em $(which zsh)"
-  else
-    log "Aviso: zsh não encontrado no PATH (incomum no macOS). Verifique /bin/zsh."
-  fi
-  install_ohmyzsh
-  log "Concluído no macOS (sem brew install, sem chsh, sem criar .zshrc)."
+# ==============================================================================
+# Lógica para macOS (darwin)
+# ==============================================================================
+if [[ "$OS" == "darwin" ]]; then
+  log "macOS detectado. Verificando configuração do Zsh."
 
-elif [ "$OS" = "linux" ]; then
-  # =========================
-  # Linux (Ubuntu): instalar zsh se faltar e mudar shell padrão SEM prompt
-  # =========================
-  DIST_ID="$(. /etc/os-release 2>/dev/null && echo "${ID:-}")"
-  if [ "${DIST_ID}" != "ubuntu" ]; then
-    log "Linux detectado (ID='${DIST_ID:-?}'). Seguindo fluxo genérico."
-  fi
-
+  SYSTEM_ZSH="/bin/zsh"
+  
+  # Sanity check: zsh DEVE existir no macOS. Se não, algo está muito errado.
   if ! have zsh; then
-    log "zsh não encontrado — tentando instalar via apt (sem prompt)..."
-    if have apt-get; then
-      sudo_n apt-get update -y && sudo_n apt-get install -y zsh || log "Não foi possível instalar zsh sem prompt."
-    else
-      log "apt-get não encontrado. Instale zsh manualmente e rode novamente."
-    fi
+    log "Erro crítico: 'zsh' não foi encontrado no PATH. Isso é inesperado no macOS."
+    exit 1
   fi
 
-  # Determina caminho do zsh (se disponível após a etapa acima)
-  ZSH_PATH="$(command -v zsh || true)"
-  if [ -n "${ZSH_PATH}" ]; then
-    # Garante entrada em /etc/shells (sem prompt)
-    if [ -f /etc/shells ] && ! grep -q "^${ZSH_PATH}$" /etc/shells 2>/dev/null; then
-      log "Adicionando ${ZSH_PATH} a /etc/shells (sem prompt)..."
-      sudo_n /bin/sh -c "echo '${ZSH_PATH}' >> /etc/shells" || true
-    fi
+  ZSH_PATH=$(which zsh)
+  log "Zsh encontrado no PATH em: $ZSH_PATH"
 
-    # Muda shell padrão (sem prompt). Se não puder, só loga.
-    CURRENT_SHELL="$(getent passwd "$USER" | awk -F: '{print $7}' || true)"
-    if [ "${CURRENT_SHELL:-}" != "${ZSH_PATH}" ]; then
-      log "Alterando shell padrão para ${ZSH_PATH} (sem prompt)..."
-      sudo_n chsh -s "${ZSH_PATH}" "${USER}" || log "Não foi possível alterar shell padrão sem prompt."
-    else
-      log "Shell padrão já é ${ZSH_PATH}"
-    fi
+  # Cenário ideal: está usando o Zsh nativo do sistema.
+  if [[ "$ZSH_PATH" == "$SYSTEM_ZSH" ]]; then
+    log "Você está usando o Zsh nativo do sistema ($SYSTEM_ZSH)."
+    log "Esta é a configuração recomendada e mais estável para o macOS."
   else
-    log "zsh ainda indisponível após tentativa de instalação."
+    log "Aviso: Um Zsh diferente do sistema está ativo em '$ZSH_PATH'."
+    log "Isso geralmente vem do Homebrew (/opt/homebrew/bin/zsh). Não há problema,"
+    log "mas certifique-se de que sua configuração de PATH no .zshenv ou .zshrc esteja correta."
+  fi
+  
+  # Verifica o shell de login padrão do usuário de forma idiomática para o macOS
+  # e não tenta alterá-lo, pois já deve ser o zsh.
+  USER_SHELL=$(dscl . -read ~ UserShell | awk '{print $2}')
+  if [[ "$USER_SHELL" == "$SYSTEM_ZSH" ]]; then
+      log "Shell de login padrão já é o Zsh do sistema ($USER_SHELL). Perfeito."
+  else
+      log "Aviso: Seu shell de login padrão é '$USER_SHELL', não o Zsh do sistema."
+      log "Você pode alterá-lo manualmente com: chsh -s $SYSTEM_ZSH"
   fi
 
   install_ohmyzsh
-  log "Concluído no Ubuntu (zsh presente se possível, tentativa de chsh sem prompt, sem criar .zshrc)."
+  
+  log "Configuração para macOS concluída."
 
+# ==============================================================================
+# Lógica para Linux (focada em Ubuntu/Debian)
+# ==============================================================================
+elif [[ "$OS" == "linux" ]]; then
+  log "Linux detectado. Verificando e configurando Zsh..."
+  
+  # Tenta instalar zsh se não estiver presente
+  if ! have zsh; then
+    log "zsh não encontrado. Tentando instalar via gerenciador de pacotes..."
+    if have apt-get; then
+      sudo_n apt-get update -y && sudo_n apt-get install -y zsh || log "Falha ao instalar zsh via apt-get."
+    elif have dnf; then
+      sudo_n dnf install -y zsh || log "Falha ao instalar zsh via dnf."
+    elif have pacman; then
+      sudo_n pacman -S --noconfirm zsh || log "Falha ao instalar zsh via pacman."
+    else
+      log "Gerenciador de pacotes não suportado. Por favor, instale 'zsh' manualmente."
+    fi
+  fi
+
+  # Prossiga apenas se o Zsh foi instalado com sucesso ou já existia
+  if have zsh; then
+    ZSH_PATH=$(which zsh)
+    log "Zsh está disponível em: $ZSH_PATH"
+
+    # Garante que o Zsh está listado nos shells permitidos
+    if [ -f /etc/shells ] && ! grep -qxF "$ZSH_PATH" /etc/shells; then
+      log "Adicionando '$ZSH_PATH' a /etc/shells..."
+      # Usa tee para adicionar a linha com sudo
+      echo "$ZSH_PATH" | sudo_n tee -a /etc/shells > /dev/null || true
+    fi
+
+    # Altera o shell padrão se ainda não for Zsh
+    # getent é mais portável em Linux que ler /etc/passwd diretamente
+    CURRENT_SHELL=$(getent passwd "$USER" | cut -d: -f7)
+    if [[ "$CURRENT_SHELL" != "$ZSH_PATH" ]]; then
+      log "Alterando o shell padrão para '$ZSH_PATH' para o usuário '$USER'..."
+      sudo_n chsh -s "$ZSH_PATH" "$USER" || log "Não foi possível alterar o shell padrão. Pode ser necessário fazer logout e login."
+    else
+      log "Shell padrão já é '$ZSH_PATH'."
+    fi
+  else
+    log "zsh não está disponível. Pulando configuração de shell e Oh My Zsh."
+    exit 1
+  fi
+  
+  install_ohmyzsh
+
+  log "Configuração para Linux concluída."
+
+# ==============================================================================
+# Fallback para outros sistemas
+# ==============================================================================
 else
-  log "SO não reconhecido pelo template (.chezmoi.os='$OS'). Sem ações."
+  log "Sistema operacional '{{ .chezmoi.os }}' não suportado por este script. Nenhuma ação será tomada."
 fi
