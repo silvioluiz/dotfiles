@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-source "$(dirname "$0")/install/helpers/init_macos_env.sh"
+{{ include "init_macos_env" | indent 0 }} 
 
 
 VM_NAME="chezmoi-test"
