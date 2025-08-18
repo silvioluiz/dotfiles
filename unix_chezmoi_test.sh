@@ -1,7 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-{{ include "init_macos_env" | indent 0 }} 
-
 
 VM_NAME="chezmoi-test"
 UBUNTU_VERSION="24.04"
