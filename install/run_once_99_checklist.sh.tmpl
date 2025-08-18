@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # O helper do macOS não é mais necessário aqui, pois o script principal agora roda dentro do zsh
-# source "$(dirname "$0")/helpers/init_macos_env.sh" 
+# {{ include "init_macos_env" | indent 0 }} 
 
 echo "===== 🚀 Iniciando checklist dentro de um shell Zsh interativo ====="
 
