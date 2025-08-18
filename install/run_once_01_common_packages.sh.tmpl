@@ -4,25 +4,25 @@ set -euo pipefail
 echo "[+] Instalando pacotes CLI básicos..."
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  # 1) Xcode CLT (interativo). Só chama se não estiver instalado.
+  echo "[i] Validando ambiente macOS..."
+
+  # 1) Valida se o Xcode Command Line Tools está instalado e ativo.
   if ! xcode-select -p >/dev/null 2>&1; then
-    echo "[+] Instalando dependências via Xcode CLT (interativo)..."
-    xcode-select --install || true
+      echo "[!] Erro: Xcode Command Line Tools não encontradas." >&2
+      echo "    Por favor, instale-as com 'xcode-select --install' ou instalando o Xcode completo." >&2
+      exit 1
   fi
 
-  # 2) Homebrew (não reinstala; usa modo não-interativo)
+  # 2) Valida se o Homebrew está instalado e no PATH.
   if ! command -v brew >/dev/null 2>&1; then
-    echo "[+] Instalando Homebrew..."
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      echo "[!] Erro: Homebrew não encontrado no PATH." >&2
+      echo "    Por favor, instale o Homebrew antes de executar este script." >&2
+      echo "    https://brew.sh" >&2
+      exit 1
   fi
 
-  # 3) Garante brew no PATH (Apple Silicon)
-  if [[ -d /opt/homebrew/bin ]] && ! command -v brew >/dev/null 2>&1; then
-    export PATH="/opt/homebrew/bin:$PATH"
-  fi
-
-  echo "[+] Instalando via Homebrew..."
-  brew install autoconf automake git gnupg ncurses pkg-config tree unzip
+  echo "[+] Instalando pacotes via Homebrew..."
+  brew install autoconf automake curl git gnupg ncurses pkg-config tree unzip
 
   echo "[+] Instalando opcionais pro Yazi..."
   brew install ffmpeg sevenzip jq poppler resvg imagemagick font-symbols-only-nerd-font
