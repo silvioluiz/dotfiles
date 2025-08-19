@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-{{ include "init_macos_env" | indent 0 }}
+{{ template "init_macos_env" . }}
 
 # Clona LazyVim starter em ~/.config/lazyvim se ainda não existir
 if [ ! -d "$HOME/.config/lazyvim" ]; then

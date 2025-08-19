@@ -1,4 +1,4 @@
-#!/bin/bash
+{{ define "init_macos_env" -}}
 
 # Verifica se estamos no macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -18,3 +18,4 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     fi
     
 fi
+{{- end }}
