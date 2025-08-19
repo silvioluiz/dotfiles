@@ -4,7 +4,6 @@ set -euo pipefail
 
 umask 022
 
-# Evita prompts de credencial/TTY
 export GIT_TERMINAL_PROMPT=0
 export GIT_ASKPASS=/bin/true
 
@@ -30,7 +29,7 @@ USE_YOU_SHOULD_USE="${USE_YOU_SHOULD_USE:-yes}"
 USE_ZSH_AUTOSUGGESTIONS="${USE_ZSH_AUTOSUGGESTIONS:-yes}"
 USE_ZSH_SYNTAX_HIGHLIGHTING="${USE_ZSH_SYNTAX_HIGHLIGHTING:-yes}"
 USE_ZSH_COMPLETIONS="${USE_ZSH_COMPLETIONS:-yes}"
-USE_FZF_TAB="${USE_FZF_TAB:-no}"
+USE_FZF_TAB="${USE_FZF_TAB:-yes}"
 
 mkdir -p "$PLUGDIR"
 
@@ -48,14 +47,10 @@ clone_or_update () {
   safe_dest "$dest"
   if [[ -d "$dest/.git" ]]; then
     log "Atualizando $(basename "$dest")..."
-    # fetch leve + reset para o default branch remoto
     git -C "$dest" fetch --force --prune --depth=1 origin >/dev/null 2>&1 || true
     if ! git -C "$dest" reset --hard origin/HEAD >/dev/null 2>&1; then
-      # fallback: detecta default branch
       defb="$(git -C "$dest" remote show origin 2>/dev/null | sed -n 's/.*HEAD branch: //p')"
-      if [[ -n "${defb:-}" ]]; then
-        git -C "$dest" reset --hard "origin/${defb}" >/dev/null 2>&1 || true
-      fi
+      [[ -n "${defb:-}" ]] && git -C "$dest" reset --hard "origin/${defb}" >/dev/null 2>&1 || true
     fi
   else
     log "Clonando $(basename "$dest")..."
@@ -78,7 +73,7 @@ clone_or_update () {
   clone_or_update "https://github.com/zsh-users/zsh-syntax-highlighting.git" \
                   "$PLUGDIR/zsh-syntax-highlighting"
 
-# zsh-completions (exige fpath no .zshrc antes do OMZ)
+# zsh-completions
 [[ "$USE_ZSH_COMPLETIONS" == "yes" ]] && \
   clone_or_update "https://github.com/zsh-users/zsh-completions.git" \
                   "$PLUGDIR/zsh-completions"
@@ -90,6 +85,8 @@ if [[ "$USE_FZF_TAB" == "yes" ]]; then
   fi
   clone_or_update "https://github.com/Aloxaf/fzf-tab.git" \
                   "$PLUGDIR/fzf-tab"
+else
+  log "USE_FZF_TAB=no → usaremos o plugin 'fzf' do OMZ no .zshrc"
 fi
 
 log "Plugins 3rd-party prontos."
