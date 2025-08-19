@@ -2,6 +2,11 @@
 export ZSH="$HOME/.oh-my-zsh"
 export ZSH_DISABLE_COMPFIX=true
 
+# Se o zprofile não rodar (shell não-login), garanta o brew ARM no PATH
+if [[ "$(uname -s)" == "Darwin" ]] && ! command -v brew >/dev/null 2>&1; then
+  [ -x "/opt/homebrew/bin/brew" ] && eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
 # Toggle para controlar fzf-tab (coincide com o run_after_)
 : ${USE_FZF_TAB:=yes}
 
@@ -9,7 +14,7 @@ export ZSH_DISABLE_COMPFIX=true
 export ZSH_AUTOSUGGEST_USE_ASYNC=1
 export ZSH_AUTOSUGGEST_STRATEGY=(history)
 
-# PATH local bin
+# (Opcional) PATH local bin — já é feito no .zprofile; pode remover estas 2 linhas se quiser
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH" ;; esac
 export PATH
 
@@ -22,7 +27,7 @@ zstyle ':omz:update' frequency 13
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$HOME/.zsh/.zcompcache"
 
-# Estilos de completion (bons tanto p/ zsh puro quanto p/ fzf-tab)
+# Estilos de completion
 zstyle ':completion:*' menu yes select
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%F{8}%d%f'
@@ -35,7 +40,7 @@ SAVEHIST=$HISTSIZE
 setopt HIST_IGNORE_ALL_DUPS HIST_REDUCE_BLANKS EXTENDED_HISTORY
 setopt INC_APPEND_HISTORY SHARE_HISTORY
 
-# plugins OMZ (sem conflitar)
+# plugins OMZ
 plugins=(
   git
   docker
@@ -48,25 +53,20 @@ plugins=(
 
 # fzf vs fzf-tab
 if [[ "$USE_FZF_TAB" == "yes" ]]; then
-  # usamos fzf-tab para o Tab; não carregue o plugin 'fzf' do OMZ
-  plugins+=(
-    fzf-tab
-  )
+  plugins+=(fzf-tab)
 else
-  # sem fzf-tab: use o plugin 'fzf' do OMZ (completion + keybindings)
-  plugins+=(
-    fzf
-  )
+  plugins+=(fzf)
 fi
 
-# zsh-completions (3rd-party) — precisa estar no fpath ANTES do OMZ
+# zsh-completions (3rd-party) — só adiciona se existir
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-fpath=("$ZSH_CUSTOM/plugins/zsh-completions/src" $fpath)
+if [[ -d "$ZSH_CUSTOM/plugins/zsh-completions/src" ]]; then
+  fpath=("$ZSH_CUSTOM/plugins/zsh-completions/src" $fpath)
+fi
 
 source "$ZSH/oh-my-zsh.sh"
 
-# --- fzf key-bindings somente quando fzf-tab está ativo ---
-# (mantemos Ctrl-R/Ctrl-T/Alt-C mesmo sem o plugin 'fzf' do OMZ)
+# --- fzf key-bindings quando fzf-tab está ativo ---
 if [[ "$USE_FZF_TAB" == "yes" ]]; then
   if command -v brew >/dev/null 2>&1; then
     FZF_SHELL_DIR="$(brew --prefix fzf 2>/dev/null)/shell"
@@ -75,20 +75,16 @@ if [[ "$USE_FZF_TAB" == "yes" ]]; then
   [[ -r "/usr/share/fzf/key-bindings.zsh" ]] && source "/usr/share/fzf/key-bindings.zsh"
   [[ -r "/usr/share/doc/fzf/examples/key-bindings.zsh" ]] && source "/usr/share/doc/fzf/examples/key-bindings.zsh"
 
-  # (opcional) defaults úteis do fzf
   export FZF_DEFAULT_COMMAND='fd --hidden --follow --exclude .git 2>/dev/null || find .'
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git 2>/dev/null || find . -type d'
 
-  # (opcional) ajustes do fzf-tab
   zstyle ':fzf-tab:*' switch-group ',' '.'
   # zstyle ':fzf-tab:*' fzf-preview 'bat --style=numbers --color=always -- "{}" 2>/dev/null'
 fi
 
-# zoxide init
+# zoxide, starship
 eval "$(zoxide init zsh)"
-
-# starship prompt
 eval "$(starship init zsh)"
 
 # zsh-autosuggestions (manual)
@@ -97,7 +93,7 @@ if [[ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]]; then
   source "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 
-# zsh-syntax-highlighting — sempre por último
+# zsh-syntax-highlighting — por último
 if [[ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
   source "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
