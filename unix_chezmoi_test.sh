@@ -33,7 +33,7 @@ multipass exec "$VM_NAME" -- bash -lc 'curl -fsLS get.chezmoi.io | sh -s -- -b "
 echo "📥 Clonando e aplicando repositório chezmoi de $GITHUB_USER..."
 multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi --version"
 multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi init \"$GITHUB_USER\""
-multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi apply -v"
+multipass exec "$VM_NAME" -- bash -lc "export PATH=\"\$HOME/.local/bin:\$PATH\"; chezmoi apply"
 
 echo "🧪 Criando script de checklist na VM..."
 # CORREÇÃO: Usamos 'cat <<'EOF' | multipass exec ...' para canalizar (pipe) o script
