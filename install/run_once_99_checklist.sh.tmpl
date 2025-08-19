@@ -1,78 +1,127 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "===== 🚀 Iniciando checklist dentro de um shell Zsh interativo ====="
+echo "===== 🚀 Checklist de ferramentas instaladas ====="
 
-# Executa todo o checklist dentro de um 'zsh' interativo (-i)
-# Isso garante que ~/.zshrc seja carregado, ativando mise, zoxide, etc.
-# Usamos um HEREDOC (<<'EOF') para passar o script de forma segura.
-zsh -i <<'EOF'
-
-# Nota: Dentro deste bloco, estamos em um shell Zsh.
-
-# 1. Shell e prompt
-echo "[1/8] Testando shell e prompt..."
-if [[ "$SHELL" == *"zsh" ]]; then
-  echo "✅ Shell padrão é Zsh"
-else
-  echo "❌ Shell padrão não é Zsh"
+# --- Bootstrap mínimo do Homebrew (apenas se necessário no macOS) ---
+if [[ "${OSTYPE:-}" == darwin* ]]; then
+  if command -v brew >/dev/null 2>&1; then
+    # Só injeta shellenv se o prefixo do brew não estiver no PATH atual
+    if hb_prefix="$(brew --prefix 2>/dev/null)"; then
+      if [[ ":$PATH:" != *":$hb_prefix/bin:"* ]]; then
+        eval "$(/usr/bin/env brew shellenv)"
+        echo "[i] Homebrew shellenv aplicado (prefix: $hb_prefix)."
+      fi
+    fi
+  fi
 fi
 
-# ... (o resto do script que refatoramos antes, com as funções e case statements,
-#      pode ser colado aqui dentro. A lógica interna dele já está correta) ...
+# --- Checagem do Zsh ---
+echo
+echo "[Zsh] Verificando shell padrão e versões..."
 
-# Cole aqui a seção 6 inteira que corrigimos anteriormente
-# 6. Utilitários comuns
-echo "[6/8] Testando utilitários comuns..."
-COMMON_TOOLS=(atuin bat btop curlie dust eza fd fzf ghostty htop hurl k9s lazydocker lazygit navi nu rg shellcheck starship yazi zoxide)
+user_shell="$(getent passwd "$(whoami)" | cut -d: -f7 || true)"
+if [[ -z "$user_shell" && "$OSTYPE" == darwin* ]]; then
+  # macOS não tem getent, usa dscl
+  user_shell="$(dscl . -read ~/ UserShell 2>/dev/null | awk '{print $2}')"
+fi
+
+if [[ "$user_shell" == *"zsh" ]]; then
+  echo "✅ Shell padrão é Zsh ($user_shell)"
+else
+  echo "❌ Shell padrão não é Zsh (atual: $user_shell)"
+fi
+
+if command -v zsh >/dev/null 2>&1; then
+  echo "ℹ️  Versão do Zsh: $(zsh --version)"
+else
+  echo "❌ Zsh não encontrado no PATH"
+fi
+
+if [[ -d "$HOME/.oh-my-zsh" ]]; then
+  echo "✅ Oh My Zsh instalado em ~/.oh-my-zsh"
+  if command -v git >/dev/null 2>&1; then
+    if ver="$(git -C "$HOME/.oh-my-zsh" describe --tags 2>/dev/null)"; then
+      echo "ℹ️  Versão/tag do Oh My Zsh: $ver"
+    else
+      sha="$(git -C "$HOME/.oh-my-zsh" rev-parse --short HEAD 2>/dev/null || true)"
+      [[ -n "$sha" ]] && echo "ℹ️  Commit do Oh My Zsh: $sha"
+    fi
+  fi
+else
+  echo "❌ Oh My Zsh não encontrado em ~/.oh-my-zsh"
+fi
+
+# --- Lista essencial de ferramentas a validar ---
+COMMON_TOOLS=(
+  atuin bat btop curlie dust eza fd fzf ghostty htop hurl k9s lazydocker lazygit
+  navi nu rg shellcheck starship yazi zoxide neovim lvim
+)
 
 get_friendly_name() {
   case "$1" in
     nu) echo "nushell" ;;
     rg) echo "ripgrep" ;;
-     *) echo "$1" ;;
+    neovim) echo "nvim" ;;
+    lvim) echo "LunarVim" ;;
+    *) echo "$1" ;;
   esac
 }
 
 DEFAULT_CANDIDATES=( "--version" "-V" "version" "version --short" )
 
 try_version() {
-  local tool="$1"; local out=""; local -a candidates=(); local custom_candidate=""
+  local tool="$1" out="" custom="" candidates=()
   case "$tool" in
-    fzf) custom_candidate="-v" ;;
-    k9s) custom_candidate="version --short" ;;
+    fzf) custom="-v" ;;
+    k9s) custom="version --short" ;;
+    neovim) tool="nvim" ;;   # comando real
   esac
-  if [[ -n "$custom_candidate" ]]; then candidates+=("$custom_candidate"); fi
+  [[ -n "$custom" ]] && candidates+=("$custom")
   candidates+=("${DEFAULT_CANDIDATES[@]}")
+
   for cand in "${candidates[@]}"; do
-    local args=( $cand )
+    read -r -a args <<<"$cand"
     if out="$("$tool" "${args[@]}" 2>&1)"; then
-      echo "$out" | head -n1; return 0;
+      echo "$out" | head -n1
+      return 0
     fi
   done
   return 1
 }
 
+echo
+echo "[1/3] Validando binários..."
 for tool in "${COMMON_TOOLS[@]}"; do
-  friendly_name="$(get_friendly_name "$tool")"
-  if command -v "$tool" >/dev/null 2>&1; then
+  friendly="$(get_friendly_name "$tool")"
+  case "$tool" in
+    neovim) cmd="nvim" ;;
+    *) cmd="$tool" ;;
+  esac
+
+  if command -v "$cmd" >/dev/null 2>&1; then
     if ver="$(try_version "$tool")"; then
-      printf "✅ %s instalado — %s\n" "$friendly_name" "$ver"
+      printf "✅ %-12s — %s\n" "$friendly" "$ver"
     else
-      printf "✅ %s instalado\n" "$friendly_name"
+      printf "✅ %-12s — instalado\n" "$friendly"
     fi
   else
-    printf "❌ %s não encontrado\n" "$friendly_name"
+    printf "❌ %-12s — não encontrado\n" "$friendly"
   fi
 done
 
-# (E as outras seções do seu checklist...)
-
-echo "[7/8] Validando PATH..."
+echo
+echo "[2/3] PATH atual (cada entrada em uma linha):"
 echo "$PATH" | tr ':' '\n'
 
-echo "[8/8] Checklist concluído!"
+echo
+echo "[3/3] Ambiente:"
+printf "SO: "
+if [[ "${OSTYPE:-}" == darwin* ]]; then
+  printf "macOS\n"
+else
+  printf "Linux/Unix\n"
+fi
 
-EOF
-
-echo "===== ✅ Fim ====="
+echo
+echo "===== ✅ Checklist concluído ====="
