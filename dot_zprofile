@@ -1,11 +1,11 @@
-# ~/.zprofile
+# ~/.zprofile  — login shell only (macOS geralmente abre login shell)
 
-# 1) Homebrew (prioritário) — Apple Silicon em /opt/homebrew
+# 1) Homebrew (Apple Silicon em /opt/homebrew)
 if [[ "$(uname -s)" == "Darwin" ]] && [ -x "/opt/homebrew/bin/brew" ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# 2) Binários do usuário (~/.local/bin) — usados por mise, chezmoi, etc.
+# 2) Binários do usuário (~/.local/bin) — mise, chezmoi, etc.
 case ":$PATH:" in
   *":$HOME/.local/bin:"*) ;;
   *) export PATH="$HOME/.local/bin:$PATH" ;;

@@ -97,7 +97,7 @@ elif [[ "$OS" == "linux" ]]; then
   if ! have zsh; then
     log "zsh não encontrado. Tentando instalar via gerenciador de pacotes..."
     if have apt-get; then
-      sudo_n apt-get update -y && sudo_n apt-get install -y zsh || log "Falha ao instalar zsh via apt-get."
+      sudo_n apt-get update && sudo_n apt-get install -y zsh || log "Falha ao instalar zsh via apt-get."
     elif have dnf; then
       sudo_n dnf install -y zsh || log "Falha ao instalar zsh via dnf."
     elif have pacman; then

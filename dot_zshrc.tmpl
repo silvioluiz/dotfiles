@@ -7,16 +7,17 @@ if [[ "$(uname -s)" == "Darwin" ]] && ! command -v brew >/dev/null 2>&1; then
   [ -x "/opt/homebrew/bin/brew" ] && eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# --- Ghostty shell integration (fallback manual) ---
+if [[ -n "${GHOSTTY_RESOURCES_DIR:-}" && -r "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration" ]]; then
+  source "${GHOSTTY_RESOURCES_DIR}/shell-integration/zsh/ghostty-integration"
+fi
+
 # Toggle para controlar fzf-tab (coincide com o run_after_)
 : ${USE_FZF_TAB:=yes}
 
 # Autosuggestions: configs devem vir antes de carregar o plugin
 export ZSH_AUTOSUGGEST_USE_ASYNC=1
 export ZSH_AUTOSUGGEST_STRATEGY=(history)
-
-# (Opcional) PATH local bin — já é feito no .zprofile; pode remover estas 2 linhas se quiser
-case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH" ;; esac
-export PATH
 
 DISABLE_UPDATE_PROMPT=true
 zstyle ':omz:update' mode auto

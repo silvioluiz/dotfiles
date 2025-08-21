@@ -8,7 +8,7 @@ MACOS_COMMON_PACKAGES=(
   
   bat btop curlie dust eza fd fzf htop hurl
 
-  k9s lazydocker navi nushell ripgrep
+  lazydocker navi nushell ripgrep
 
   shellcheck starship yazi zoxide
 )
@@ -48,6 +48,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | \
     sudo tee /etc/apt/sources.list.d/eza.list > /dev/null
   sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/eza.list
+  sudo apt update
   sudo apt install -y eza
 
   echo "[+] Instalando k9s..."
@@ -72,6 +73,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   echo "[+] Instalando Hurl (.deb oficial)..."
   HURL_VERSION=7.0.0
   sudo apt-add-repository -y ppa:lepapareil/hurl
+  sudo apt update
   sudo apt install -y hurl="${HURL_VERSION}"*
 
   echo "[+] Instalando Navi..."

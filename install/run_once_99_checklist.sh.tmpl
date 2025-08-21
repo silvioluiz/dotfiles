@@ -9,7 +9,7 @@ if [[ "${OSTYPE:-}" == darwin* ]]; then
     # Só injeta shellenv se o prefixo do brew não estiver no PATH atual
     if hb_prefix="$(brew --prefix 2>/dev/null)"; then
       if [[ ":$PATH:" != *":$hb_prefix/bin:"* ]]; then
-        eval "$(/usr/bin/env brew shellenv)"
+        eval "$(brew shellenv)"
         echo "[i] Homebrew shellenv aplicado (prefix: $hb_prefix)."
       fi
     fi
