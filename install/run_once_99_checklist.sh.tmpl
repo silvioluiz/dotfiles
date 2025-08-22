@@ -55,7 +55,7 @@ fi
 # --- Lista essencial de ferramentas a validar ---
 COMMON_TOOLS=(
   atuin bat btop curlie dust eza fd fzf ghostty htop hurl k9s lazydocker lazygit
-  navi nu rg shellcheck starship yazi zoxide neovim lvim
+  navi nu rg shellcheck starship yazi zoxide neovim
 )
 
 get_friendly_name() {
@@ -63,7 +63,6 @@ get_friendly_name() {
     nu) echo "nushell" ;;
     rg) echo "ripgrep" ;;
     neovim) echo "nvim" ;;
-    lvim) echo "LunarVim" ;;
     *) echo "$1" ;;
   esac
 }

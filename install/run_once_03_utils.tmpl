@@ -31,6 +31,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   brew install derailed/k9s/k9s
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  export PATH="$HOME/.local/bin:$PATH"
   echo "[+] Instalando via APT..."
   sudo apt update
   sudo apt install -y "${UNIX_COMMON_PACKAGES[@]}"
