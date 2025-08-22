@@ -1,0 +1,32 @@
+# ~/.zshenv — mínimo e universal
+# Carregado SEMPRE (login/não-login, interativo ou script).
+# Mantém apenas o essencial para localizar binários.
+
+# 0) Helper rápido para evitar duplicar entradas no PATH
+_zp() { case ":$PATH:" in *":$1:"*) ;; *) PATH="$1:$PATH" ;; esac }
+
+# 1) Binários do usuário primeiro (ex.: starship no Linux via ~/.local/bin)
+[ -d "$HOME/.local/bin" ] && _zp "$HOME/.local/bin"
+
+# 2) Cargo (se quiser rust tools disponíveis também em scripts)
+[ -d "$HOME/.cargo/bin" ] && _zp "$HOME/.cargo/bin"
+
+{{- if eq .chezmoi.os "darwin" }}
+  # 3) Homebrew no macOS
+  {{- if eq .chezmoi.arch "arm64" }}
+    # Apple Silicon
+    [ -d /opt/homebrew/bin ] && _zp "/opt/homebrew/bin"
+  {{- else }}
+    # Intel
+    [ -d /usr/local/bin ] && _zp "/usr/local/bin"
+  {{- end }}
+{{- else if eq .chezmoi.os "linux" }}
+  # 3) Linuxbrew no Linux (Ubuntu/Debian etc.)
+  [ -d /home/linuxbrew/.linuxbrew/bin ] && _zp "/home/linuxbrew/.linuxbrew/bin"
+
+  # 4) Snap (Ubuntu)
+  [ -d /snap/bin ] && _zp "/snap/bin"
+{{- end }}
+
+export PATH
+unset -f _zp
