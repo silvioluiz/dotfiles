@@ -7,10 +7,8 @@ echo "[+] Instalando Starship..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # macOS: assume Homebrew presente
   brew install starship
-  echo "[+] Instalando JetBrainsMono Nerd Font (macOS)…"
-  brew tap homebrew/cask-fonts
-  brew install --cask font-jetbrains-mono-nerd-font
-
+  # INSTALE MANUALMENTE a fonte JetBrainsMono Nerd Font (macOS)…"
+  
 elif [[ "$OSTYPE" == "linux"* ]]; then
   # Linux: script oficial do Starship
   curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
